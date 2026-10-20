@@ -12,7 +12,7 @@ Three public Korean documents used to benchmark `hwp-parser`.
 
 - `prospectus.*`: a real-estate investment company's draft prospectus (투자설명서(안));
   the issuer is named in the document.
-  Source URL: (to be added)
+  Source URL: <https://www.kait.com/reits1/?mod=document&uid=4959&kboard_id=50>
 - `pharma-disclosure.*`: a best-practice guide for disclosures by pharmaceutical and
   biotech companies in their business reports, with the August 2026 revisions
   (제약·바이오 기업 공시 모범사례). The issuing organisation is not named in the document
