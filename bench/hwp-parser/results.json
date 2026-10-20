@@ -1,6 +1,6 @@
 {
-  "date": "2026-10-20",
-  "git_sha": "14e1a40",
+  "date": "2026-10-21",
+  "git_sha": "64c3ade",
   "versions": {
     "python": "3.11.15",
     "lit": "lit 2.14.6",
@@ -28,14 +28,14 @@
         "char_accuracy": 0.877,
         "word_f1": 0.861,
         "tables": 32,
-        "seconds": 0.715
+        "seconds": 0.663
       },
       "hwp-parser --ocr": {
         "status": "ok",
         "char_accuracy": 0.818,
         "word_f1": 0.825,
         "tables": 32,
-        "seconds": 2.687
+        "seconds": 2.499
       },
       "LlamaParse (cloud)": {
         "status": "ok",
@@ -58,14 +58,14 @@
         "char_accuracy": 0.793,
         "word_f1": 0.837,
         "tables": 31,
-        "seconds": 0.542
+        "seconds": 0.552
       },
       "hwp-parser --ocr": {
         "status": "ok",
         "char_accuracy": 0.793,
         "word_f1": 0.837,
         "tables": 31,
-        "seconds": 0.678
+        "seconds": 0.682
       },
       "LlamaParse (cloud)": {
         "status": "ok",
@@ -88,14 +88,14 @@
         "char_accuracy": 0.768,
         "word_f1": 0.806,
         "tables": 17,
-        "seconds": 0.491
+        "seconds": 0.434
       },
       "hwp-parser --ocr": {
         "status": "ok",
         "char_accuracy": 0.768,
         "word_f1": 0.806,
         "tables": 17,
-        "seconds": 0.494
+        "seconds": 0.489
       },
       "LlamaParse (cloud)": {
         "status": "ok",
@@ -118,13 +118,13 @@
       "char_accuracy": 0.813,
       "word_f1": 0.835,
       "tables": 26.667,
-      "seconds": 0.583
+      "seconds": 0.55
     },
     "hwp-parser --ocr": {
       "char_accuracy": 0.793,
       "word_f1": 0.823,
       "tables": 26.667,
-      "seconds": 1.286
+      "seconds": 1.223
     },
     "LlamaParse (cloud)": {
       "char_accuracy": 0.763,
