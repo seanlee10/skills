@@ -1,0 +1,20 @@
+seanlee10/skills
+Copyright (c) 2026 Sean Lee
+
+This repository is licensed under the MIT License (see LICENSE). It bundles or
+relies on the following third-party components, which remain under their own
+licenses:
+
+1. tessdata_fast (bundled: skills/hwp-parser/tessdata/kor.traineddata, eng.traineddata)
+   License: Apache License 2.0 (full text: skills/hwp-parser/tessdata/LICENSE)
+   Source: https://github.com/tesseract-ocr/tessdata_fast
+
+2. pyhwp (NOT bundled; installed at runtime by uv from PyPI)
+   License: GNU Affero General Public License v3.0 (AGPL-3.0)
+   Source: https://github.com/mete0r/pyhwp
+   pyhwp is not distributed with this repository. It is downloaded and run as a
+   separate process at runtime, and its license terms apply to that use.
+
+The skill folder carries its own copy of these notices (skills/hwp-parser/NOTICE and
+skills/hwp-parser/tessdata/LICENSE), so they travel with the skill when it is installed
+on its own.

@@ -1,0 +1,11 @@
+{
+  "name": "seanlee10-skills",
+  "version": "0.1.0",
+  "description": "Agent skills by Sean Lee, starting with hwp-parser (HWP/HWPX to Markdown).",
+  "author": {
+    "name": "Sean Lee"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/seanlee10/skills",
+  "skills": "./skills/"
+}

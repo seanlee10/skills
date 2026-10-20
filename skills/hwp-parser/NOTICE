@@ -1,0 +1,13 @@
+hwp-parser (part of seanlee10/skills, MIT License)
+
+Third-party components:
+
+1. tessdata_fast language data (bundled: tessdata/kor.traineddata, tessdata/eng.traineddata)
+   License: Apache License 2.0 (full text in tessdata/LICENSE)
+   Source: https://github.com/tesseract-ocr/tessdata_fast (main branch)
+
+2. pyhwp (runtime dependency, NOT bundled; installed by uv from PyPI)
+   License: GNU Affero General Public License v3.0 (AGPL-3.0)
+   Source: https://github.com/mete0r/pyhwp
+   pyhwp is not distributed with this skill. It is downloaded and run as a separate
+   process at runtime, and its license terms apply to that use.

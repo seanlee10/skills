@@ -1,0 +1,14 @@
+{
+  "name": "seanlee10",
+  "description": "Agent skills by Sean Lee: hwp-parser converts HWP/HWPX documents to Markdown.",
+  "owner": {
+    "name": "Sean Lee"
+  },
+  "plugins": [
+    {
+      "name": "seanlee10-skills",
+      "source": "./",
+      "description": "Agent skills by Sean Lee, starting with hwp-parser (HWP/HWPX to Markdown)."
+    }
+  ]
+}

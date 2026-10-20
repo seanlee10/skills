@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-20",
+  "git_sha": "14e1a40",
+  "versions": {
+    "python": "3.11.15",
+    "lit": "lit 2.14.6",
+    "liteparse": "2.14.6",
+    "pyhwp": "0.1b15",
+    "rapidfuzz": "3.14.6"
+  },
+  "reference": "Hancom Docs PDF text layer: lit parse <pdf> --no-ocr --format text",
+  "rounding": "fractions in [0, 1] rounded to 3 decimals; seconds rounded to 3 decimals",
+  "docs": [
+    "prospectus",
+    "pharma-disclosure",
+    "youth-rfp"
+  ],
+  "systems": [
+    "hwp-parser",
+    "hwp-parser --ocr",
+    "LlamaParse (cloud)",
+    "hwp-parser --vlm groq"
+  ],
+  "results": {
+    "prospectus": {
+      "hwp-parser": {
+        "status": "ok",
+        "char_accuracy": 0.877,
+        "word_f1": 0.861,
+        "tables": 32,
+        "seconds": 0.715
+      },
+      "hwp-parser --ocr": {
+        "status": "ok",
+        "char_accuracy": 0.818,
+        "word_f1": 0.825,
+        "tables": 32,
+        "seconds": 2.687
+      },
+      "LlamaParse (cloud)": {
+        "status": "ok",
+        "char_accuracy": 0.787,
+        "word_f1": 0.826,
+        "tables": 32,
+        "seconds": null
+      },
+      "hwp-parser --vlm groq": {
+        "status": "not measured",
+        "char_accuracy": null,
+        "word_f1": null,
+        "tables": null,
+        "seconds": null
+      }
+    },
+    "pharma-disclosure": {
+      "hwp-parser": {
+        "status": "ok",
+        "char_accuracy": 0.793,
+        "word_f1": 0.837,
+        "tables": 31,
+        "seconds": 0.542
+      },
+      "hwp-parser --ocr": {
+        "status": "ok",
+        "char_accuracy": 0.793,
+        "word_f1": 0.837,
+        "tables": 31,
+        "seconds": 0.678
+      },
+      "LlamaParse (cloud)": {
+        "status": "ok",
+        "char_accuracy": 0.745,
+        "word_f1": 0.794,
+        "tables": 28,
+        "seconds": null
+      },
+      "hwp-parser --vlm groq": {
+        "status": "not measured",
+        "char_accuracy": null,
+        "word_f1": null,
+        "tables": null,
+        "seconds": null
+      }
+    },
+    "youth-rfp": {
+      "hwp-parser": {
+        "status": "ok",
+        "char_accuracy": 0.768,
+        "word_f1": 0.806,
+        "tables": 17,
+        "seconds": 0.491
+      },
+      "hwp-parser --ocr": {
+        "status": "ok",
+        "char_accuracy": 0.768,
+        "word_f1": 0.806,
+        "tables": 17,
+        "seconds": 0.494
+      },
+      "LlamaParse (cloud)": {
+        "status": "ok",
+        "char_accuracy": 0.756,
+        "word_f1": 0.771,
+        "tables": 9,
+        "seconds": null
+      },
+      "hwp-parser --vlm groq": {
+        "status": "not measured",
+        "char_accuracy": null,
+        "word_f1": null,
+        "tables": null,
+        "seconds": null
+      }
+    }
+  },
+  "mean": {
+    "hwp-parser": {
+      "char_accuracy": 0.813,
+      "word_f1": 0.835,
+      "tables": 26.667,
+      "seconds": 0.583
+    },
+    "hwp-parser --ocr": {
+      "char_accuracy": 0.793,
+      "word_f1": 0.823,
+      "tables": 26.667,
+      "seconds": 1.286
+    },
+    "LlamaParse (cloud)": {
+      "char_accuracy": 0.763,
+      "word_f1": 0.797,
+      "tables": 23.0,
+      "seconds": null
+    },
+    "hwp-parser --vlm groq": {
+      "char_accuracy": null,
+      "word_f1": null,
+      "tables": null,
+      "seconds": null
+    }
+  }
+}

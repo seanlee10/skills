@@ -1,0 +1,21 @@
+# Secrets
+.env*
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Runtime / generated
+.runtime/
+bench/hwp-parser/out/
+
+# Never commit decks
+*.pptx
+
+# OS
+.DS_Store
+
+# Local agent workspace
+.superpowers/
