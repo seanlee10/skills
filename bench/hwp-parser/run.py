@@ -18,7 +18,8 @@ Usage: uv run bench/hwp-parser/run.py [--check] [--update-readme] [--with-vlm]
   --check          run again, write nothing, exit 1 if any hwp-parser char_accuracy is below
                    the committed results.json value minus 0.01
   --update-readme  after writing the results, replace the text between
-                   <!-- bench:start --> and <!-- bench:end --> in README.md with results.md
+                   <!-- bench:start --> and <!-- bench:end --> in README.md and README.ko.md
+                   with results.md
   --with-vlm       also measure `hwp-parser --vlm groq` (needs GROQ_API_KEY; sends images to Groq)
 
 Reference text = `lit parse <sample>.pdf --no-ocr --format text` (Hancom Docs PDF text layer).
@@ -49,7 +50,7 @@ SAMPLES = HERE / 'samples'
 OUT = HERE / 'out'
 RESULTS_JSON = HERE / 'results.json'
 RESULTS_MD = HERE / 'results.md'
-README = REPO / 'README.md'
+READMES = (REPO / 'README.md', REPO / 'README.ko.md')
 
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(SCRIPTS))
@@ -282,13 +283,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument('--check', action='store_true',
                    help='re-run and fail if hwp-parser char_accuracy regressed by more than 0.01')
     p.add_argument('--update-readme', action='store_true',
-                   help='replace the README.md bench block with results.md')
+                   help='replace the bench block in README.md and README.ko.md with results.md')
     p.add_argument('--with-vlm', action='store_true',
                    help='also measure --vlm groq (requires GROQ_API_KEY; sends images to Groq)')
     args = p.parse_args(argv)
     try:
         if args.update_readme:
-            check_readme(README)
+            for readme in READMES:
+                check_readme(readme)
         committed = None
         if args.check:
             if not RESULTS_JSON.is_file():
@@ -310,8 +312,9 @@ def main(argv: list[str] | None = None) -> int:
         RESULTS_MD.write_text(md, encoding='utf-8')
         sys.stdout.write(md)
         if args.update_readme:
-            update_readme(README, md)
-            sys.stderr.write('[bench] README.md updated\n')
+            for readme in READMES:
+                update_readme(readme, md)
+                sys.stderr.write(f'[bench] {readme.name} updated\n')
     except BenchError as e:
         sys.stderr.write(f'[bench] error: {e}\n')
         return 1

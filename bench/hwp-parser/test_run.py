@@ -32,11 +32,40 @@ def test_update_readme_missing_markers(tmp_path, body):
     assert readme.read_text(encoding='utf-8') == body
 
 
+def test_readmes_are_english_and_korean():
+    assert [p.name for p in run.READMES] == ['README.md', 'README.ko.md']
+    assert all(p.parent == run.REPO for p in run.READMES)
+
+
 def test_main_update_readme_fails_before_running(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr(run, 'README', tmp_path / 'README.md')
+    monkeypatch.setattr(run, 'READMES', (tmp_path / 'README.md', tmp_path / 'README.ko.md'))
     monkeypatch.setattr(run, 'run_bench', lambda **_: pytest.fail('bench must not run'))
     assert run.main(['--update-readme']) == 1
     assert 'README.md not found' in capsys.readouterr().err
+
+
+def test_main_update_readme_checks_every_readme_first(tmp_path, monkeypatch, capsys):
+    en, ko = tmp_path / 'README.md', tmp_path / 'README.ko.md'
+    en.write_text('<!-- bench:start -->\nold\n<!-- bench:end -->\n', encoding='utf-8')
+    monkeypatch.setattr(run, 'READMES', (en, ko))
+    monkeypatch.setattr(run, 'run_bench', lambda **_: pytest.fail('bench must not run'))
+    assert run.main(['--update-readme']) == 1
+    assert 'README.ko.md not found' in capsys.readouterr().err
+    assert en.read_text(encoding='utf-8') == '<!-- bench:start -->\nold\n<!-- bench:end -->\n'
+
+
+def test_main_update_readme_updates_both(tmp_path, monkeypatch):
+    en, ko = tmp_path / 'README.md', tmp_path / 'README.ko.md'
+    en.write_text('# EN\n<!-- bench:start -->\nold\n<!-- bench:end -->\nen tail\n', encoding='utf-8')
+    ko.write_text('# KO\n<!-- bench:start -->\n예전\n<!-- bench:end -->\nko tail\n', encoding='utf-8')
+    monkeypatch.setattr(run, 'READMES', (en, ko))
+    monkeypatch.setattr(run, 'RESULTS_JSON', tmp_path / 'results.json')
+    monkeypatch.setattr(run, 'RESULTS_MD', tmp_path / 'results.md')
+    monkeypatch.setattr(run, 'run_bench', lambda **_: {'stub': True})
+    monkeypatch.setattr(run, 'render_md', lambda data: '| new |\n')
+    assert run.main(['--update-readme']) == 0
+    assert en.read_text(encoding='utf-8') == '# EN\n<!-- bench:start -->\n| new |\n<!-- bench:end -->\nen tail\n'
+    assert ko.read_text(encoding='utf-8') == '# KO\n<!-- bench:start -->\n| new |\n<!-- bench:end -->\nko tail\n'
 
 
 def _res(**acc):
