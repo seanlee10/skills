@@ -134,7 +134,7 @@ uv run skills/hwp-parser/scripts/hwp2md.py --check-vlm groq|xai
 | `--ocr` | Local OCR of embedded raster images (LiteParse + bundled Korean/English Tesseract data). | No |
 | `--pdf FILE` | OCR a PDF rendering of the same document and append pages whose text direct extraction missed. | No |
 | `--pdf auto` | Experimental, HWP 5 only: render the PDF locally with LibreOffice, then as `--pdf FILE`. | No |
-| `--vlm groq` / `--vlm xai` | Experimental — xAI checked live once, Groq not yet. Send embedded PNG/JPEG images to a vision LLM and add its reading under each image; BMP/GIF images are skipped (`VLM_SKIPPED`). | **Yes** |
+| `--vlm groq` / `--vlm xai` | Experimental — xAI checked live once, Groq not yet. Send embedded images to a vision LLM and add its reading under each image; BMP/GIF/TIFF/WebP are converted to PNG in memory first. | **Yes** |
 | `--check-vlm groq` / `--check-vlm xai` | Key preflight, used alone (no INPUT): prints `{"status":"ok","provider":…,"key_env":…,"key_present":true\|false}`, exits 0, never prints the key. | No |
 
 Examples:
@@ -159,7 +159,7 @@ uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwpx --pdf brochure.pdf
 uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwp --pdf auto
 
 # Describe embedded images with a vision LLM (sends images to Groq or xAI).
-# Experimental: xAI checked live once, Groq not yet; only PNG/JPEG images are sent.
+# Experimental: xAI checked live once, Groq not yet.
 uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwp --vlm groq
 uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwp --vlm xai
 
@@ -167,7 +167,7 @@ uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwp --vlm xai
 uv run skills/hwp-parser/scripts/hwp2md.py brochure.hwp --ocr --pdf brochure.pdf --out-dir out --force
 ```
 
-`--vlm` is experimental. One live run against xAI (`grok-4.3`) on a dense Korean diagram read every number correctly but misread several proper nouns (company and fund names), so check names against the source. Groq has not been run live yet. Note that only PNG/JPEG images are sent, so BMP/GIF images (common in HWP files; every image in the bench samples is BMP) are skipped with `VLM_SKIPPED`.
+`--vlm` is experimental. One live run against xAI (`grok-4.3`) on a dense Korean diagram read every number correctly but misread several proper nouns (company and fund names), so check names against the source. Groq has not been run live yet. BMP, GIF, TIFF and WebP images (and PNG/JPEG over 3 MiB) are converted to PNG or JPEG in memory first, long side capped at 2048 px; the saved asset is unchanged. Images that cannot be decoded (e.g. WMF/EMF drawings, OLE objects) are skipped with `VLM_SKIPPED`.
 
 Details: [skills/hwp-parser/references/ocr-vlm.md](skills/hwp-parser/references/ocr-vlm.md).
 
@@ -258,7 +258,7 @@ asks you to export it in your shell and restart the session (or continue without
 Everything is local except `--vlm`. Direct extraction, `--ocr`, `--pdf FILE` and
 `--pdf auto` never open a network connection (the first `uv run` downloads the pinned
 packages from PyPI; conversions themselves are offline). With `--vlm groq` only Groq is
-contacted, with `--vlm xai` only xAI; only embedded PNG/JPEG images (at most 3 MiB each) are
+contacted, with `--vlm xai` only xAI; only embedded images (as PNG/JPEG of at most 3 MiB each) are
 sent, not the document text. The agent is instructed never to pass `--vlm` unless you ask,
 and to confirm first for a non-public document.
 

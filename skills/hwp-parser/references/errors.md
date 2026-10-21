@@ -87,7 +87,7 @@ these failures is transient except the network ones under `--vlm`.
 | `VLM_HTTP_ERROR` | Generic message shared by all `<PROVIDER>_HTTP_<status>` codes. | See the row above. |
 | `VLM_NETWORK_ERROR` | Provider unreachable, TLS failure or 90 s timeout. | Check connectivity / proxy and retry. |
 | `VLM_BAD_RESPONSE` | Malformed, non-JSON or oversized (> 4 MiB) response. | Retry once; if it persists, run without `--vlm`. |
-| `VLM_UNSUPPORTED_IMAGE` | An image sent to the provider is not PNG/JPEG or exceeds 3 MiB. | Normally such images are skipped (`VLM_SKIPPED`); report it as a bug if seen. |
+| `VLM_UNSUPPORTED_IMAGE` | A prepared image is not PNG/JPEG or exceeds 3 MiB. | Normally such images are skipped (`VLM_SKIPPED`); report it as a bug if seen. |
 
 ## Unexpected errors
 
@@ -104,7 +104,7 @@ type (not the document).
 | `OCR_FAILED:<id>` | LiteParse failed on that image; the run continued. | Mention that the image was not OCR'd. |
 | `OCR_ONLY_TEXT` | All text came from OCR; the document has no direct text. | Tell the user the content is OCR output and may contain errors. |
 | `EXPERIMENTAL_PDF_CONVERSION` | `--pdf auto` used LibreOffice rendering. | Treat appended pages with care; prefer a Hancom-exported PDF. |
-| `VLM_SKIPPED:<id>` | Image not sent: not PNG/JPEG or over 3 MiB. | No VLM note for that image. |
+| `VLM_SKIPPED:<id>` | Image not sent: cannot be decoded (e.g. WMF/EMF, OLE object), over 40 million pixels, or still over 3 MiB after re-encoding. | No VLM note for that image. |
 | `VLM_EMPTY:<id>` | The provider returned no text for that image. | No VLM note for that image. |
 | `UNINTERPRETED_BINARY:<id>` | Embedded object of unknown type kept as `.bin`. | Often WMF/EMF drawings or OLE objects; content not converted. |
 | `UNINTERPRETED_OBJECT:<tag>` | A document object type not converted. | Content of that object is missing; check the original if it matters. |

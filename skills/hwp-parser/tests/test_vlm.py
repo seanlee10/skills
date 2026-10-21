@@ -334,3 +334,92 @@ def test_check_vlm_usage(tmp_path, capsys):
     assert hwp2md.main([str(tmp_path / 'a.hwpx'), '--check-vlm', 'groq']) == 2  # query only
     errors = [json.loads(line)['error'] for line in capsys.readouterr().err.splitlines()]
     assert errors == ['USAGE_ERROR'] * 3
+
+
+def _image_bytes(fmt, size=(40, 20), mode='RGB', **save):
+    from PIL import Image as PILImage
+    buf = io.BytesIO()
+    PILImage.new(mode, size, 'red').save(buf, fmt, **save)
+    return buf.getvalue()
+
+
+def _sent_image(opener):
+    body = json.loads(sent_request(opener).data)
+    url = body['messages'][0]['content'][1]['image_url']['url']
+    head, b64 = url.split(',', 1)
+    return head, base64.b64decode(b64)
+
+
+@pytest.mark.parametrize('fmt,ext', [('BMP', '.bmp'), ('GIF', '.gif'), ('TIFF', '.tif'), ('WEBP', '.webp')])
+def test_non_png_jpeg_is_converted_to_png(fmt, ext, tmp_path):
+    data = _image_bytes(fmt)
+    doc = image_doc(Asset('a0', data, ext, 'image/' + fmt.lower()))
+    with patch.dict(vlm.os.environ, KEYS, clear=True), \
+         patch.object(vlm.urllib.request, 'build_opener') as opener:
+        mock_opener(opener)
+        assert vlm.annotate(doc, tmp_path, 'xai') == {'a0': [('vlm:xai', '도장')]}
+    head, sent = _sent_image(opener)
+    assert head == 'data:image/png;base64' and sent.startswith(b'\x89PNG\r\n\x1a\n')
+    assert not any(w.startswith('VLM_SKIPPED') for w in doc.warnings)
+    assert doc.assets['a0'].data == data  # the saved asset stays as extracted
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_real_sample_bmp_is_eligible():
+    import olefile
+    import zlib
+    ole = olefile.OleFileIO(str(SKILL.parent.parent / 'bench/hwp-parser/samples/prospectus.hwp'))
+    raw = ole.openstream('BinData/BIN0001.bmp').read()
+    data = zlib.decompress(raw, -15)
+    assert data.startswith(b'BM') and vlm.eligible(data)
+    mime, png = vlm.payload(data)
+    assert mime == 'image/png' and len(png) <= vlm.MAX_IMAGE
+
+
+def test_large_image_is_downscaled(tmp_path):
+    big = _image_bytes('BMP', size=(5000, 300))
+    mime, data = vlm.payload(big)
+    from PIL import Image as PILImage
+    with PILImage.open(io.BytesIO(data)) as im:
+        assert mime == 'image/png' and im.size == (vlm.MAX_SIDE, round(300 * vlm.MAX_SIDE / 5000))
+
+
+def test_oversize_png_becomes_smaller_image():
+    import os
+    from PIL import Image as PILImage
+    noise = PILImage.frombytes('RGB', (1100, 1100), os.urandom(1100 * 1100 * 3))
+    buf = io.BytesIO()
+    noise.save(buf, 'PNG')
+    assert len(buf.getvalue()) > vlm.MAX_IMAGE
+    mime, data = vlm.payload(buf.getvalue())
+    assert mime == 'image/jpeg' and len(data) <= vlm.MAX_IMAGE
+
+
+def test_png_and_jpeg_within_limit_pass_through_unchanged():
+    jpeg = _image_bytes('JPEG')
+    assert vlm.payload(PNG) == ('image/png', PNG)
+    assert vlm.payload(jpeg) == ('image/jpeg', jpeg)
+
+
+def test_transparent_gif_keeps_alpha():
+    gif = _image_bytes('GIF', mode='P', transparency=0)
+    mime, data = vlm.payload(gif)
+    from PIL import Image as PILImage
+    with PILImage.open(io.BytesIO(data)) as im:
+        assert mime == 'image/png' and im.mode == 'RGBA'
+
+
+@pytest.mark.parametrize('data', [
+    b'BM' + b'\x00' * 60,                       # truncated BMP header
+    b'%PDF-1.7\n',                              # not an image format we decode
+    b'\xd7\xcd\xc6\x9a' + b'\x00' * 40,         # WMF placeable header
+])
+def test_undecodable_images_are_skipped(data):
+    assert vlm.payload(data) is None and not vlm.eligible(data)
+
+
+def test_decompression_bomb_is_skipped():
+    bmp = bytearray(_image_bytes('BMP', size=(4, 4)))
+    bmp[18:22] = (60000).to_bytes(4, 'little')  # width
+    bmp[22:26] = (60000).to_bytes(4, 'little')  # height: 3.6 G pixels
+    assert vlm.payload(bytes(bmp)) is None

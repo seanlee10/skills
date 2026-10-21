@@ -44,7 +44,7 @@ Korean names and spaces are common.
 | `--ocr` | Local OCR (LiteParse + bundled Korean/English Tesseract data) of embedded raster images. Offline. |
 | `--pdf FILE` | OCR a PDF rendering of the same document and append pages whose text the direct extraction missed. Offline. |
 | `--pdf auto` | Experimental, HWP 5 only: render a PDF locally via LibreOffice (must be installed), then as `--pdf FILE`. |
-| `--vlm groq` / `--vlm xai` | Experimental — xAI checked live once, Groq not yet. Send embedded PNG/JPEG images to a vision LLM and add its reading under each image; BMP/GIF images (common in HWP) are skipped with `VLM_SKIPPED`. **Network; see below.** |
+| `--vlm groq` / `--vlm xai` | Experimental — xAI checked live once, Groq not yet. Send embedded images to a vision LLM and add its reading under each image; BMP/GIF/TIFF/WebP (common in HWP) are converted to PNG in memory first; undecodable images are skipped with `VLM_SKIPPED`. **Network; see below.** |
 | `--check-vlm groq` / `--check-vlm xai` | Key preflight, used alone (no INPUT). Prints `{"status":"ok","provider":…,"key_env":…,"key_present":true\|false}` and exits 0. No network; never prints the key. |
 
 Details: [references/ocr-vlm.md](references/ocr-vlm.md).

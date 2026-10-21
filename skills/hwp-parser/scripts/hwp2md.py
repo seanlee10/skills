@@ -7,6 +7,7 @@
 #     "six==1.17.0",
 #     "lxml==6.1.3",
 #     "liteparse==2.14.6",
+#     "pillow==12.3.0",
 # ]
 # ///
 """Convert an .hwp / .hwpx document to Markdown with an assets folder.

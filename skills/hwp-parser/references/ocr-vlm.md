@@ -8,7 +8,7 @@ replace or correct it.
 | --- | --- | --- |
 | `--ocr` | Local | Embedded raster images |
 | `--pdf FILE` / `--pdf auto` | Local | Pages of a PDF rendering of the document |
-| `--vlm groq` / `--vlm xai` | **Remote provider** | Embedded PNG/JPEG images |
+| `--vlm groq` / `--vlm xai` | **Remote provider** | Embedded raster images (sent as PNG/JPEG) |
 
 Flags can be combined (`--ocr --pdf FILE --vlm groq`); each image then gets one note per
 source.
@@ -73,7 +73,7 @@ HWP 5 → ODT (pyhwp, sandboxed child process) → PDF (LibreOffice `soffice --h
 **Experimental.** Request and response handling is covered by mocked tests. One live
 run against xAI (`grok-4.3`) on a dense Korean diagram read every number correctly but
 misread several proper nouns (company and fund names); treat VLM notes as a draft and
-check names against the source. Groq has not been run live yet. Note that only PNG/JPEG images are sent, so BMP/GIF images (common in HWP files; every image in the bench samples is BMP) are skipped with `VLM_SKIPPED`.
+check names against the source. Groq has not been run live yet.
 
 Agent rules:
 
@@ -98,9 +98,12 @@ Behaviour:
 - Keys are read only from the environment variable of the chosen provider. No `.env` file
   is read, and the other provider's key is never used. A missing key fails with
   `GROQ_API_KEY_MISSING` / `XAI_API_KEY_MISSING` before anything is sent.
-- What is sent: only extracted embedded images that are PNG or JPEG and at most 3 MiB, one
-  request per image, plus a fixed prompt. Document text is not sent. Other images are
-  skipped with warning `VLM_SKIPPED:<id>`. Rendered PDF pages are never sent.
+- What is sent: extracted embedded images, one request per image, plus a fixed prompt.
+  PNG/JPEG of at most 3 MiB go as-is. BMP, GIF (first frame), TIFF, WebP and oversize
+  PNG/JPEG are decoded with Pillow and re-encoded in memory: long side capped at 2048 px,
+  PNG if it fits in 3 MiB, else JPEG (quality 85). The saved asset is not changed. Images
+  Pillow cannot decode (WMF/EMF, OLE `.bin`) or larger than 40 million pixels are skipped
+  with warning `VLM_SKIPPED:<id>`. Document text and rendered PDF pages are never sent.
 - Before the first request, stderr gets `{"notice":"sending N image(s) to <provider>"}`.
   If no image is eligible, nothing is sent and `paths` does not list the provider.
 - Requests use JSON mode, a 90 s timeout, no redirects, no retries and no model fallback.
