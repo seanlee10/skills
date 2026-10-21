@@ -181,16 +181,21 @@ def test_descriptions_name_every_skill():
     hermes_description = next(line.split(':', 1)[1] for line in hermes.splitlines()
                               if line.startswith('description:'))
     assert ': ' not in hermes_description.strip()
-    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
     for name in SKILL_IDS:
         for text in (marketplace['description'], marketplace['plugins'][0]['description'],
                      plugin['description'], hermes_description):
             assert name in text, name
-        assert f'| [{name}](skills/{name}/SKILL.md) |' in readme, name
-        assert f'## {name} usage' in readme, name
+    for path in READMES:
+        readme = path.read_text(encoding='utf-8')
+        for name in SKILL_IDS:
+            assert f'| [{name}](skills/{name}/SKILL.md) |' in readme, (path.name, name)
+            assert f'\n### {name}\n' in readme, (path.name, name)
 
 
 README = ROOT / 'README.md'
+README_KO = ROOT / 'README.ko.md'
+READMES = [README, README_KO]
+README_IDS = [p.name for p in READMES]
 
 
 def _bench_block(text):
@@ -199,14 +204,49 @@ def _bench_block(text):
     return text[text.find(start) + len(start):text.find(end)]
 
 
-def test_readme_bench_in_sync():
-    block = _bench_block(README.read_text(encoding='utf-8'))
+@pytest.mark.parametrize('readme', READMES, ids=README_IDS)
+def test_readme_bench_in_sync(readme):
+    block = _bench_block(readme.read_text(encoding='utf-8'))
     results = (ROOT / 'bench/hwp-parser/results.md').read_text(encoding='utf-8')
     assert block.strip('\n') == results.strip('\n')
 
 
-def test_readme_install_commands():
-    text = README.read_text(encoding='utf-8')
+def test_readme_language_switch():
+    assert README.read_text(encoding='utf-8').splitlines()[0] == '**English** | [한국어](README.ko.md)'
+    assert README_KO.read_text(encoding='utf-8').splitlines()[0] == '[English](README.md) | **한국어**'
+
+
+def _slug(heading):
+    import re
+    return re.sub(r'[^\w\- ]', '', heading.strip().lower()).replace(' ', '-')
+
+
+def _anchors(path):
+    import re
+    text = re.sub(r'^```.*?^```', '', path.read_text(encoding='utf-8'), flags=re.S | re.M)
+    return {_slug(m) for m in re.findall(r'^#{1,6} (.+)$', text, re.M)}
+
+
+@pytest.mark.parametrize('doc', [README, README_KO, ROOT / 'bench/hwp-parser/README.md'],
+                         ids=['README.md', 'README.ko.md', 'bench-README.md'])
+def test_readme_links_resolve(doc):
+    import re
+    text = re.sub(r'```.*?```|`[^`\n]*`', '', doc.read_text(encoding='utf-8'), flags=re.S)
+    targets = re.findall(r'\]\(([^)\s]+)\)', text)
+    assert targets
+    for target in targets:
+        if re.match(r'[a-z]+:', target):
+            continue
+        file_part, _, anchor = target.strip('<>').partition('#')
+        path = (doc.parent / file_part).resolve() if file_part else doc
+        assert path.exists(), f'{doc.name}: {target}'
+        if anchor and path.suffix == '.md':
+            assert anchor in _anchors(path), f'{doc.name}: {target}'
+
+
+@pytest.mark.parametrize('readme', READMES, ids=README_IDS)
+def test_readme_install_commands(readme):
+    text = readme.read_text(encoding='utf-8')
     for command in [
         '/plugin marketplace add seanlee10/skills',
         '/plugin install seanlee10-skills@seanlee10',
