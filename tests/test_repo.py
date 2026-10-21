@@ -37,7 +37,8 @@ def _pep723(path):
                                  for line in m.group(1).splitlines(keepends=True)))
 
 
-@pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py')])
+@pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py'),
+                                          ('kipris-search', 'kipris_api.py')])
 def test_pep723_pins_match_requirements(skill, script):
     scripts = ROOT / 'skills' / skill / 'scripts'
     meta = _pep723(scripts / script)
@@ -49,11 +50,12 @@ def test_pep723_pins_match_requirements(skill, script):
 
 SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
 SKILL_IDS = [skill.name for skill in SKILLS]
-KEYWORDS = {'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker']}
+KEYWORDS = {'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
+            'kipris-search': ['KIPRIS', 'patent', 'trademark']}
 
 
 def test_skill_set():
-    assert SKILL_IDS == ['google-photo', 'hwp-parser']
+    assert SKILL_IDS == ['google-photo', 'hwp-parser', 'kipris-search']
 
 
 def _frontmatter(path):
@@ -83,6 +85,7 @@ def test_skill_frontmatter(skill):
 @pytest.mark.parametrize('skill,module', [
     ('hwp-parser', 'hwp2md'),
     ('google-photo', 'gphoto.errors'),
+    ('kipris-search', 'kipris_api'),
 ])
 def test_errors_reference_complete(skill, module):
     import importlib
@@ -137,7 +140,7 @@ def test_hermes_register():
     import pathlib
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
-    assert [name for name, _, _ in ctx.calls] == ['google-photo', 'hwp-parser']
+    assert [name for name, _, _ in ctx.calls] == ['google-photo', 'hwp-parser', 'kipris-search']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name
         assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()
