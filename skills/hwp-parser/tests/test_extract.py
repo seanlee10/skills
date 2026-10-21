@@ -48,6 +48,14 @@ def test_no_duplicate_text(make_hwpx, tmp_path):
 
 
 
+def test_hwpx_special_spaces_become_spaces(make_hwpx, tmp_path):
+    # Fixed-width (고정폭 빈칸) and non-breaking (묶음 빈칸) spaces are empty elements in HWPX.
+    sec2 = (f'<hs:sec {NS}><hp:p id="1"><hp:run><hp:t>제2026<hp:fwSpace/>-<hp:fwSpace/>432호'
+            '<hp:nbSpace/>공고</hp:t></hp:run></hp:p></hs:sec>')
+    doc = extract(make_hwpx(tmp_path / 'sp.hwpx', {'Contents/section2.xml': sec2}))
+    assert '제2026 - 432호 공고' in [text(b) for b in doc.blocks if isinstance(b, Paragraph)]
+
+
 def test_table_caption_kept(make_hwpx, tmp_path):
     sec2 = (f'<hs:sec {NS}><hp:p id="1"><hp:run><hp:tbl rowCnt="1" colCnt="1">'
             '<hp:caption side="BOTTOM"><hp:subList><hp:p id="2"><hp:run><hp:t>CAPTION</hp:t></hp:run></hp:p>'

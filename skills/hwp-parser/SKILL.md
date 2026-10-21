@@ -56,6 +56,10 @@ Details: [references/ocr-vlm.md](references/ocr-vlm.md).
 - stdout (exit 0): one JSON summary, e.g.
   `{"status":"ok","markdown":"…/doc.md","assets_dir":"…/doc_assets","tables":3,"images":2,"paths":["direct"],"warnings":[]}`.
   Report the `warnings` to the user when they matter (e.g. `OCR_EMPTY:a0`, `VLM_SKIPPED:a3`).
+- If `images` is above 0 and the run was direct only, tell the user that text inside those
+  images (charts, org charts, scanned stamps) is not in the Markdown, and offer `--ocr`
+  (local) or `--vlm` (sends the images to Groq/xAI; only on their explicit choice). Look at
+  the saved images first if you can, and skip the offer when they are clearly decorative.
 - stderr: the script writes JSON lines only (on the first run `uv` may print install/progress
   lines to stderr before them). On failure (exit 2) the last line is
   `{"status":"failed","error":CODE,"message":...}`. Look the code up in

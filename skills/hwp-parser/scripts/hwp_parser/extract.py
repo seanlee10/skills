@@ -158,11 +158,18 @@ class Builder:
         return out
 
     def content(self, n):
-        # HWPX text has inline tab/lineBreak nodes; preserve their tail text.
+        # HWPX text has inline tab/lineBreak/fwSpace/nbSpace nodes; preserve their tail text.
         s = n.text or ''
         for child in n:
             kind = local(child)
-            s += '\t' if kind == 'tab' else '\n' if kind in ('lineBreak', 'br') else self.content(child)
+            if kind == 'tab':
+                s += '\t'
+            elif kind in ('lineBreak', 'br'):
+                s += '\n'
+            elif kind in ('fwSpace', 'nbSpace'):  # 고정폭 빈칸 / 묶음 빈칸, like HWP 5 codes 30/31
+                s += ' '
+            else:
+                s += self.content(child)
             s += child.tail or ''
         return s
 
