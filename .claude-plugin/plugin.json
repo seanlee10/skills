@@ -1,7 +1,7 @@
 {
   "name": "seanlee10-skills",
   "version": "0.1.0",
-  "description": "Agent skills by Sean Lee, including hwp-parser (HWP/HWPX to Markdown) and google-photo (collect and curate Google Photos via the Picker API).",
+  "description": "Agent skills by Sean Lee, including hwp-parser (HWP/HWPX to Markdown), google-photo (collect and curate Google Photos via the Picker API) and kipris-search (search KIPRIS for Korean patents, trademarks and designs).",
   "author": {
     "name": "Sean Lee"
   },

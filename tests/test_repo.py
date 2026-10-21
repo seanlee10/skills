@@ -174,6 +174,22 @@ def test_hermes_register_frontmatter_edge_cases(tmp_path):
     ]
 
 
+def test_descriptions_name_every_skill():
+    marketplace = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
+    plugin = json.loads((ROOT / '.claude-plugin/plugin.json').read_text())
+    hermes = (ROOT / '.hermes-plugin/plugin.yaml').read_text(encoding='utf-8')
+    hermes_description = next(line.split(':', 1)[1] for line in hermes.splitlines()
+                              if line.startswith('description:'))
+    assert ': ' not in hermes_description.strip()
+    readme = (ROOT / 'README.md').read_text(encoding='utf-8')
+    for name in SKILL_IDS:
+        for text in (marketplace['description'], marketplace['plugins'][0]['description'],
+                     plugin['description'], hermes_description):
+            assert name in text, name
+        assert f'| [{name}](skills/{name}/SKILL.md) |' in readme, name
+        assert f'## {name} usage' in readme, name
+
+
 README = ROOT / 'README.md'
 
 

@@ -12,6 +12,11 @@ The second skill, **google-photo**, collects photos and videos of a person, even
 from Google Photos (through Google's official Picker) into a local folder and curates them
 into a ranked highlight set. It runs only on your own computer.
 
+The third skill, **kipris-search**, searches KIPRIS, the official Korean IP database, for
+patents, utility models, trademarks and designs, and reports numbers, applicants, holders and
+legal status with reproducible search conditions. It uses the public KIPRIS website in the
+agent's browser, or an optional stdlib-only KIPRISPlus API helper with your own key.
+
 ## Install
 
 <details>
@@ -92,6 +97,7 @@ All skills run their scripts with [`uv`](https://docs.astral.sh/uv/); see
 | --- | --- |
 | [hwp-parser](skills/hwp-parser/SKILL.md) | `.hwp` (HWP 5) / `.hwpx` to Markdown with HTML tables and extracted images. Optional local OCR, and optional Groq/xAI vision enrichment. |
 | [google-photo](skills/google-photo/SKILL.md) | Collect a person's, event's or year's photos and videos from Google Photos through the official Picker into a local folder, then curate a ranked highlight set from small contact sheets. |
+| [kipris-search](skills/kipris-search/SKILL.md) | Search KIPRIS for Korean patents, utility models, trademarks and designs by keyword, applicant or number, through the website or an optional KIPRISPlus API helper, and report what was actually confirmed. |
 
 ## hwp-parser usage
 
@@ -462,6 +468,87 @@ picker. Every error and warning code:
 [skills/google-photo/references/errors.md](skills/google-photo/references/errors.md).
 Curation rubric: [skills/google-photo/references/curation.md](skills/google-photo/references/curation.md).
 
+## kipris-search usage
+
+**kipris-search** looks up Korean patents, utility models, trademarks and designs in
+[KIPRIS](https://www.kipris.or.kr/khome/main.do) and reports the queries it ran, the total
+count, and the confirmed numbers, dates, applicants, holders and legal status. It keeps
+application, publication and registration numbers apart, keeps leading zeros, never reads
+"0 results" as "the right does not exist", and keeps finding similar marks apart from any
+opinion on registrability or infringement.
+
+### Ask your agent
+
+Once the plugin is installed, just ask. In Claude Code the agent picks the skill from your
+request; in Hermes, name the `kipris-search` skill in the request.
+
+- `KIPRIS에서 '커피' 상표 검색해줘`
+- `Find Korean patents on 이차전지 (secondary batteries) filed by 삼성전자.`
+- `What is the status of Korean patent application 1020140061596?`
+- `Is there a registered Korean trademark similar to "커피향기" for cafés?` (the
+  agent reports candidates, classes and status; it does not give a legal opinion)
+
+Without a key the agent uses the public KIPRIS website through whatever browser tool it has.
+With a KIPRISPlus key it uses the API helper for Korean list searches and the browser for
+details, claims, images and current holders.
+
+### KIPRISPlus key (optional)
+
+1. Get an API key at [KIPRISPlus](https://plus.kipris.or.kr/) and apply for each product you
+   need (patent/utility, trademark, design); each product has its own permission and
+   period. The agent never applies for products, paid services or alerts for you.
+2. Register the key yourself, in a terminal you opened (input is hidden). **Never paste the
+   key into the chat**; the agent never runs `configure`.
+
+```sh
+uv run skills/kipris-search/scripts/kipris_api.py configure
+```
+
+The key is stored in `~/.config/kipris-search/api-key` (mode 600, folder mode 700). Running
+`configure` again replaces it. `configure` and `status` never call the API.
+
+### Run it yourself
+
+```sh
+uv run skills/kipris-search/scripts/kipris_api.py status
+uv run skills/kipris-search/scripts/kipris_api.py search --right trademark --query '커피'
+uv run skills/kipris-search/scripts/kipris_api.py search --right patent-utility --query '이차전지' --size 10
+uv run skills/kipris-search/scripts/kipris_api.py search --right all --applicant '삼성전자'
+uv run skills/kipris-search/scripts/kipris_api.py search --right patent --application-number 1020140061596
+```
+
+(Inside Claude Code the script lives at `${CLAUDE_SKILL_DIR}/scripts/kipris_api.py`.)
+
+| Command | What it does | Network |
+| --- | --- | --- |
+| `configure` | Saves the key from hidden input; only in an interactive local terminal. | No |
+| `status` | `{"status":"ok","configured":true\|false,"remote_validation":"not_performed","key_file":"~/.config/kipris-search/api-key"}`; never prints the key. | No |
+| `search --right R [--query T] [--applicant T] [--application-number N] [--registration-number N] [--page P] [--size S]` | One page (default 10, at most 500) for `patent-utility`, `patent`, `utility`, `trademark` or `design`; `all` sends one request to each of the three products. No retries, no automatic next page. | KIPRISPlus |
+
+### Output
+
+`search` prints one JSON object: `status` (`ok`, or `partial` when any right failed), `ok`,
+and `results`, one entry per right. A successful entry has `total`, `returned`, `page`,
+`page_size`, `has_more`, `records` (title, numbers, dates, applicant, status, and per right
+abstract/IPC, owner/class/Vienna code or class/creator), `filters` and `retrieved_at` (UTC). A
+right whose product your key is not licensed for, or any other per-right failure, appears
+as `{"ok":false,"right":...,"error":CODE,"message":...}` while the other rights still
+return results; the command then exits 1. A whole-command failure (no key, bad arguments)
+exits 2 with `{"status":"failed","error":CODE,"message":...}` on stderr. Every code:
+[skills/kipris-search/references/errors.md](skills/kipris-search/references/errors.md).
+
+### What is sent where
+
+- **API helper:** only to `plus.kipris.or.kr` over HTTPS, with your key and the search
+  conditions. No redirects are followed, no proxy is used, responses are capped at 8 MiB,
+  and the key never appears in output or error messages.
+- **Browser route:** the agent's browser tool visits the public KIPRIS website, like you
+  would. Login and CAPTCHA steps are handed to you; the agent never signs up or bypasses
+  restrictions.
+
+Details: [api.md](skills/kipris-search/references/api.md) and
+[browser-search.md](skills/kipris-search/references/browser-search.md).
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -471,6 +558,7 @@ Curation rubric: [skills/google-photo/references/curation.md](skills/google-phot
 - google-photo: a Google account and a one-time Google Cloud project with your own Desktop
   OAuth client ([setup](skills/google-photo/references/setup.md)); optional `ffmpeg`, for
   video frames on the contact sheets.
+- kipris-search: nothing beyond `uv` (standard library only); optional KIPRISPlus API key.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 
