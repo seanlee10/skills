@@ -13,7 +13,7 @@ selection. Items downloaded before a `fetch` failure stay in the manifest and ar
 
 | Code | Meaning | What to do |
 | --- | --- | --- |
-| `USAGE_ERROR` | Invalid command-line arguments (unknown flag, missing `--subject` / `--year`, bad number, negative `--wait`). | Check the command against `gphoto.py <command> --help` or the Run section of SKILL.md. |
+| `USAGE_ERROR` | Invalid command-line arguments (unknown flag, missing `--subject` / `--year`, bad number, negative `--wait`). | Check the command against `uv run <this skill's folder>/scripts/gphoto.py <command> --help` or the Run section of SKILL.md. |
 | `REMOTE_ENVIRONMENT_REFUSED` | The machine looks remote: an SSH session, a container, or Linux without a display. Nothing was done. | Run the skill on the user's own computer, in a local terminal or local agent session. Do not try to work around it. |
 | `CLIENT_SECRET_MISSING` | No OAuth client file at `~/.config/google-photo/client_secret.json` (or at `GOOGLE_PHOTO_CLIENT_SECRET`). | Do the one-time setup in [setup.md](setup.md), steps 1–5 (or 3–5 if the project already exists). |
 | `CLIENT_SECRET_INVALID` | The file is not a Google **Desktop app** client JSON (for example a "Web application" client, or an edited file). | Create a Desktop app client and download its JSON again ([setup.md](setup.md), step 4). Never paste the file into the chat. |

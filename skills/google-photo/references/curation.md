@@ -81,6 +81,43 @@ an earlier `curate` run must be rewritten: picks must be written after the lates
 `curate`, and `select` refuses a picks file older than `candidates.json` with
 `PICKS_OUTDATED`.
 
+## Writing picks by hand
+
+When you run the commands yourself instead of through an agent, you do the agent's part:
+look at the sheets and write `picks.json` in a text editor. From a clone of the repository
+`<this skill's folder>` is `skills/google-photo`:
+
+```sh
+uv run <this skill's folder>/scripts/gphoto.py curate --subject Mia --year 2026
+#   prints "sheets" (the contact-sheet images) and "picks_file" (where picks.json goes)
+open ~/Pictures/google-photo/Mia/2026/curation/sheets/sheet-01.jpg   # macOS; any image viewer works
+#   ...write ~/Pictures/google-photo/Mia/2026/curation/picks.json (below)...
+uv run <this skill's folder>/scripts/gphoto.py select --subject Mia --year 2026
+```
+
+1. Open each sheet image. Every tile is labelled with its ref and date, e.g. `C014
+   2026-03-08` (`C…` photos, `V…` videos). Note the refs you want, best first.
+2. Create `picks.json` at the `picks_file` path, saved as UTF-8: one `items` list, one
+   entry per ref in rank order, each with a short `reason` (any text you like, at most 200
+   characters):
+
+   ```json
+   {
+     "items": [
+       {"ref": "C014", "reason": "on the swing, laughing"},
+       {"ref": "C051", "reason": "beach at sunset"},
+       {"ref": "V003", "reason": "first steps"}
+     ]
+   }
+   ```
+
+3. Run `select`. It checks the file against the rules above; on `INVALID_PICKS` or
+   `PICKS_OUTDATED` it changes nothing, so fix the file and run it again.
+
+Write the file after the latest `curate`: running `curate` again renumbers the refs, and
+`select` then refuses the older file. To change the selection later, edit `picks.json` and
+run `select` again. You can also pass a picks file kept elsewhere with `--picks FILE`.
+
 ## After `select`
 
 `select` writes `<year>/selection.json` (`subject`, `year`, `created`, and per item `rank`,
@@ -93,6 +130,6 @@ unchanged; a listed file that was edited or replaced since is kept under its nam
 placing the new files, so a failed run leaves no stale one behind.
 
 Files in `selected/` are **hard links** to the originals in `media/` where the disk allows
-it (copies otherwise). A hard link is the same file: editing one in place edits the
-original. Copy files out of `selected/` before editing them. Deleting a file in
+it (copies otherwise). A hard link is a second name for the same file on disk, so it takes
+no extra space, but editing one in place edits the original. Copy files out of `selected/` before editing them. Deleting a file in
 `selected/` does not delete the original.

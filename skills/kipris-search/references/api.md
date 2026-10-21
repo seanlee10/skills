@@ -20,7 +20,9 @@ uv run <this skill's folder>/scripts/kipris_api.py configure
 
 Give the user this command with the resolved absolute path of `kipris_api.py` in place of
 `<this skill's folder>` (in Claude Code, the expanded value of `${CLAUDE_SKILL_DIR}`), so
-they can paste it into their terminal as is; the placeholder itself does not run.
+they can paste it into their terminal as is; the placeholder itself does not run. A user
+working from a clone of the repository can run it from the clone's root with
+`skills/kipris-search` as the folder.
 
 The input is hidden. The key is stored in plain text in `~/.config/kipris-search/api-key`
 with file mode 600 in a folder of mode 700: a file private to the user, outside the

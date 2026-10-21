@@ -1,19 +1,31 @@
 # One-time Google Cloud setup
 
 The skill talks to Google with your **own** OAuth client, in your own Google Cloud project.
-You do this once per Google account; it takes about 10 minutes. The project does not need
-a billing account.
+An *OAuth client* is a small ID file (`client_secret.json`) that identifies "your app" to
+Google, so that Google's own sign-in page can ask you whether this app may see the photos
+you pick. You do this once per Google account; it takes about 10 minutes. The project does
+not need a billing account.
 
-You need: a Google account that owns the photos (a personal Gmail account works), a browser,
-and optionally the [`gcloud` CLI](https://cloud.google.com/sdk/docs/install) for steps 1–2.
+## Before you start
+
+- A Google account that owns the photos (a personal Gmail account works) and a browser.
+- Optional, for steps 1–2 from a terminal: the
+  [`gcloud` CLI](https://cloud.google.com/sdk/docs/install). After installing it, sign
+  gcloud itself in once with `gcloud auth login` (any Google account you own; this is
+  separate from the skill's own sign-in in step 6). Without gcloud, use the console links
+  given in each step.
+- A **project ID**. It must be unique across all of Google Cloud (not just your account),
+  6–30 characters long, made of lowercase letters, digits and hyphens, starting with a
+  letter and not ending with a hyphen, e.g. `my-photo-picker-2026`. If the ID is taken,
+  pick another. The examples below use `my-photo-picker-2026`: replace it with yours
+  everywhere, including in the console links.
+- Where the skill lives, for the commands in steps 5–6: `<this skill's folder>` is
+  `skills/google-photo` in a clone of the repository, or `${CLAUDE_SKILL_DIR}` inside
+  Claude Code; your agent can also tell you the full path.
 
 ## 1. Create a project
 
-With gcloud (pick any unused id, lowercase letters, digits and dashes, e.g.
-`my-photo-picker-2026`):
-
 ```sh
-gcloud auth login                      # signs gcloud itself in; any account you own
 gcloud projects create my-photo-picker-2026
 ```
 
@@ -25,7 +37,9 @@ Or in the console: <https://console.cloud.google.com/projectcreate>.
 gcloud services enable photospicker.googleapis.com --project=my-photo-picker-2026
 ```
 
-Or in the console: APIs & Services → Library → "Google Photos Picker API" → Enable.
+Or in the console:
+<https://console.cloud.google.com/apis/library/photospicker.googleapis.com?project=my-photo-picker-2026>
+→ **Enable** (APIs & Services → Library → "Google Photos Picker API").
 
 ## 3. Consent screen (web console only)
 
@@ -37,9 +51,10 @@ There is no gcloud command for this with a personal account. Open (replace the i
 2. App name (anything, e.g. "My photo picker") and user support email (yours).
 3. Audience: **External**.
 4. Contact email (yours); accept the policy; **Create**.
-5. **Audience → Test users → Add users**: add the Gmail address that owns the photos.
-   Without this, sign-in fails with "Access blocked" / "has not completed the Google
-   verification process".
+5. **Audience → Test users → Add users**
+   (<https://console.cloud.google.com/auth/audience?project=my-photo-picker-2026>): add the
+   Gmail address that owns the photos. Without this, sign-in fails with "Access blocked" /
+   "has not completed the Google verification process".
 
 Leave the app in **Testing**; you do not need to publish or verify it.
 
@@ -64,7 +79,13 @@ the shell that starts your agent. The whole config folder can be moved with
 `GOOGLE_PHOTO_CONFIG_DIR`. Do not paste the file's contents into a chat, and do not commit
 it anywhere.
 
-Then `gphoto.py check` should report `"client_secret":"present"`.
+Then check it:
+
+```sh
+uv run <this skill's folder>/scripts/gphoto.py check
+```
+
+It should report `"client_secret":"present"`.
 
 ## 6. Sign in
 
@@ -75,15 +96,16 @@ uv run <this skill's folder>/scripts/gphoto.py auth
 The browser opens Google's sign-in. Choose the account that owns the photos (the test user
 from step 3). Google shows **"Google hasn't verified this app"**: that is your own app, so
 choose **Continue**. Grant the Google Photos permission. The page then says you can close
-it, and the command prints `{"status":"ok","signed_in":true}`. The refresh token is saved
-in `~/.config/google-photo/token.json` (mode 0600). Only one permission is requested:
+it, and the command prints `{"status":"ok","signed_in":true}`. The *refresh token* (your saved
+sign-in, so you do not have to log in for every command) is saved in
+`~/.config/google-photo/token.json` (mode 0600, readable only by you). Only one permission is requested:
 `photospicker.mediaitems.readonly` (see the items you pick, nothing else).
 
 ## Good to know
 
 - **7-day sign-in.** Google issues refresh tokens that expire after 7 days for apps left in
-  Testing status. When that happens a command fails with `AUTH_REQUIRED`: run `auth`
-  again. (Publishing the app to "In production" removes the limit but may require Google's
+  Testing status. When that happens a command fails with `AUTH_REQUIRED`: run
+  `uv run <this skill's folder>/scripts/gphoto.py auth` again. (Publishing the app to "In production" removes the limit but may require Google's
   app verification; for personal use, signing in again weekly is simpler.)
 - **"This app is blocked".** Signing in with gcloud's own client
   (`gcloud auth application-default login --scopes=...photospicker...`) is blocked by

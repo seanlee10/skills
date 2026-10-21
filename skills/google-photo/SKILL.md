@@ -195,5 +195,5 @@ and re-downloads an item whose file was deleted from `media/`.
 ## References
 
 - [references/setup.md](references/setup.md): one-time Google Cloud project, consent screen and Desktop OAuth client.
-- [references/curation.md](references/curation.md): the picking rubric and the `picks.json` format.
+- [references/curation.md](references/curation.md): the picking rubric, the `picks.json` format, and [writing picks by hand](references/curation.md#writing-picks-by-hand) when the user runs the commands themselves.
 - [references/errors.md](references/errors.md): every error and warning code with its remedy.
