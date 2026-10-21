@@ -15,13 +15,13 @@ Three public Korean documents used to benchmark `hwp-parser`.
   Source URL: <https://www.kait.com/reits1/?mod=document&uid=4959&kboard_id=50>
 - `pharma-disclosure.*`: a best-practice guide for disclosures by pharmaceutical and
   biotech companies in their business reports, with the August 2026 revisions
-  (제약·바이오 기업 공시 모범사례). The issuing organisation is not named in the document
-  text itself.
-  Source URL: (to be added)
+  (제약·바이오 기업 공시 모범사례), published on DART by the Financial Supervisory
+  Service (금융감독원).
+  Source URL: <https://dart.fss.or.kr/info/searchGuide02.do>
 - `youth-rfp.*`: a request for proposals for the 2024 award ceremony of the youth
   challenge and youth growth programmes, issued by 고용노동부 (Ministry of Employment
-  and Labor), per its content.
-  Source URL: (to be added)
+  and Labor).
+  Source URL: <https://www.moel.go.kr/news/notice/noticeView.do?bbs_seq=20240800369>
 
 ## Provenance and copyright
 
