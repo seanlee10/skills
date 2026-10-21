@@ -1,6 +1,6 @@
 {
   "name": "seanlee10",
-  "description": "Agent skills by Sean Lee: hwp-parser converts HWP/HWPX documents to Markdown.",
+  "description": "Agent skills by Sean Lee: hwp-parser converts HWP/HWPX documents to Markdown; google-photo collects and curates photos and videos from Google Photos via the Picker API.",
   "owner": {
     "name": "Sean Lee"
   },
@@ -8,7 +8,7 @@
     {
       "name": "seanlee10-skills",
       "source": "./",
-      "description": "Agent skills by Sean Lee, starting with hwp-parser (HWP/HWPX to Markdown)."
+      "description": "Agent skills by Sean Lee, including hwp-parser (HWP/HWPX to Markdown) and google-photo (collect and curate Google Photos via the Picker API)."
     }
   ]
 }

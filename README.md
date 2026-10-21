@@ -8,6 +8,10 @@ into clean Markdown: text, bold/underline, outline headings, tables (as HTML, wi
 cells) and embedded images. It runs locally; nothing leaves your machine unless you ask for
 `--vlm`.
 
+The second skill, **google-photo**, collects photos and videos of a person, event or year
+from Google Photos (through Google's official Picker) into a local folder and curates them
+into a ranked highlight set. It runs only on your own computer.
+
 ## Install
 
 <details>
@@ -87,6 +91,7 @@ All skills run their scripts with [`uv`](https://docs.astral.sh/uv/); see
 | Skill | What it does |
 | --- | --- |
 | [hwp-parser](skills/hwp-parser/SKILL.md) | `.hwp` (HWP 5) / `.hwpx` to Markdown with HTML tables and extracted images. Optional local OCR, and optional Groq/xAI vision enrichment. |
+| [google-photo](skills/google-photo/SKILL.md) | Collect a person's, event's or year's photos and videos from Google Photos through the official Picker into a local folder, then curate a ranked highlight set from small contact sheets. |
 
 ## hwp-parser usage
 
@@ -344,12 +349,128 @@ char_accuracy = max(0, 1 − Levenshtein distance / reference length) after NFC 
 Date 2026-10-21 · git 64c3ade · Python 3.11.15 · lit 2.14.6 · pyhwp 0.1b15 · rapidfuzz 3.14.6 · reproduce with `uv run bench/hwp-parser/run.py`.
 <!-- bench:end -->
 
+## google-photo usage
+
+**google-photo** collects the photos and videos of a person, event or year from your Google
+Photos into a local folder (one per subject per year), then curates them down to a ranked
+highlight set, by default about 75 photos and 8 clips, enough for a 2–3 minute video.
+
+Google no longer lets apps read a Photos library directly, so the skill uses the official
+**Google Photos Picker**: it gives you a link to Google's own picker page, you search (for
+example a person's name: the picker finds Google's face group for them) and select, using
+the select-all checkbox next to each day, and press Done. The skill downloads exactly what
+you picked, at full resolution.
+
+### Ask your agent
+
+Once the plugin is installed, just ask. In Claude Code the agent picks the skill from your
+request; in Hermes, name the `google-photo` skill in the request.
+
+- `Collect all photos and videos of Mia from 2026 from Google Photos.`
+- `Get the photos of our Lisbon trip from Google Photos, only 2026-05-01 to 2026-05-10.`
+- `Curate the best of Mia's 2026 photos for a highlight video.`
+- `Add the photos of Mia I just found to her 2026 folder.` (only new items are downloaded)
+
+The agent runs `check`, signs you in if needed, sends you the picker link and tells you
+exactly what to type in the picker's search box, waits for you to press Done, downloads,
+then curates and reports every count (downloaded, already present, filtered out, skipped).
+
+### One-time setup
+
+The skill signs in with your own OAuth client in your own Google Cloud project (about 10
+minutes, once):
+
+1. `gcloud projects create <id>` and
+   `gcloud services enable photospicker.googleapis.com --project=<id>`.
+2. In the web console: the consent screen (Google Auth Platform → Get started, Audience
+   **External**, then add your Gmail address as a **test user**) and a **Desktop app**
+   OAuth client (Download JSON).
+3. Save the JSON as `~/.config/google-photo/client_secret.json` (or point
+   `GOOGLE_PHOTO_CLIENT_SECRET` at it).
+4. `gphoto.py auth`: sign in in the browser; "Google hasn't verified this app" is expected
+   for your own app (Continue).
+
+Apps left in Testing get refresh tokens that expire after 7 days; then the skill asks you to
+run `auth` again. Step by step, with console links:
+[skills/google-photo/references/setup.md](skills/google-photo/references/setup.md).
+
+### Run it yourself
+
+```sh
+uv run skills/google-photo/scripts/gphoto.py check
+uv run skills/google-photo/scripts/gphoto.py auth
+uv run skills/google-photo/scripts/gphoto.py start --subject Mia --year 2026
+#   -> the picker opens in the browser (or open picker_uri): search "Mia", select each day, press Done
+uv run skills/google-photo/scripts/gphoto.py fetch            # repeat while "status":"waiting"
+uv run skills/google-photo/scripts/gphoto.py curate --subject Mia --year 2026
+#   -> the agent reads the contact sheets and writes curation/picks.json
+uv run skills/google-photo/scripts/gphoto.py select --subject Mia --year 2026
+```
+
+(Inside Claude Code the script lives at `${CLAUDE_SKILL_DIR}/scripts/gphoto.py`.)
+
+| Command | What it does | Network |
+| --- | --- | --- |
+| `check` | Is this machine ready: client file, sign-in, ffmpeg. | No |
+| `auth` | Browser sign-in; saves a refresh token (mode 0600). | Google |
+| `start --subject NAME --year YYYY [--search TEXT] [filters]` | Creates a picking session, opens the picker link in the default browser (skip with `--no-browser`; `BROWSER_NOT_OPENED` in `warnings` if it could not) and prints the link. Filters, applied after picking: `--from/--to YYYY-MM-DD` (inside the year), `--type photo\|video\|all`, `--camera TEXT`, `--orientation portrait\|landscape`, `--min-side PX`; also `--tz ZONE`, `--out-root DIR`. | Google |
+| `fetch [--session ID] [--wait SECONDS]` | Waits up to `--wait` (default 540 s) for Done, then downloads the picked items; the download itself is not bounded by `--wait` and can take much longer. If it is killed (e.g. by a timeout), or stopped by Ctrl-C or a failure while waiting for Done or listing, run `fetch` again; after Ctrl-C or a failure while downloading, the session is closed: run `start` and pick again. Finished items are kept either way. | Google |
+| `curate --subject NAME --year YYYY [--target N] [--video-target N]` | Local pre-filter (near-duplicates, blurry, dark, month balance) and contact sheets. Defaults: 75 photos, 8 videos. | No |
+| `select --subject NAME --year YYYY [--picks FILE]` | Applies the ranked picks: `selected/` and `selection.json`. | No |
+
+A session holds at most 2,000 items; for more, or for a second search, run another
+`start` / `fetch` pair with the same subject and year. Items already downloaded are never
+downloaded twice.
+
+### Output
+
+```
+~/Pictures/google-photo/          # default --out-root
+└── Mia/2026/
+    ├── manifest.json             # every downloaded item: file, capture time, type, size, camera…
+    ├── media/                    # full-size originals (never deleted by the skill)
+    ├── .thumbs/                  # small Google thumbnails, used for curation
+    ├── curation/
+    │   ├── candidates.json       # pre-filtered candidates
+    │   ├── sheets/sheet-01.jpg…  # contact sheets the agent looks at
+    │   └── picks.json            # the agent's ranked picks
+    ├── selection.json            # the final ranked selection with a reason per item
+    └── selected/                 # 001_<file>, 002_<file>… in rank order
+```
+
+Files in `selected/` are hard links to the originals in `media/` (copies where hard links
+are not possible): editing one in place edits the original, so copy them before editing. A
+`.DS_Store` in `selected/` triggers the harmless `SELECTED_FOLDER_HAS_OTHER_FILES` warning.
+
+### Privacy
+
+- **Local only.** The skill runs only on your own computer. Over SSH, in a container or on
+  headless Linux it refuses (`REMOTE_ENVIRONMENT_REFUSED`) before signing in or
+  downloading anything.
+- **Full-size files go only from Google to your disk.** No other service, no telemetry. Only
+  the read-only Picker permission is requested, so the skill sees only what you pick.
+- **Thumbnails go to your agent's model during curation.** The agent looks at the contact
+  sheets (tiles of at most 256 px) to choose shots, so those small thumbnails are sent to
+  your agent's own model provider (e.g. Anthropic for Claude Code). It never opens the
+  full-size files.
+- **Never paste tokens** or the client secret into the chat. They stay in
+  `~/.config/google-photo/` and the skill never prints them.
+
+The API returns no location, people or description, so there is no place filter and the
+skill cannot check who is in a photo: who is pictured is decided by your search in the
+picker. Every error and warning code:
+[skills/google-photo/references/errors.md](skills/google-photo/references/errors.md).
+Curation rubric: [skills/google-photo/references/curation.md](skills/google-photo/references/curation.md).
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
   `brew install uv`). It fetches Python 3.11 and the pinned dependencies on first run.
 - Optional: LibreOffice, only for `--pdf auto`.
 - Optional: a `GROQ_API_KEY` or `XAI_API_KEY`, only for `--vlm`.
+- google-photo: a Google account and a one-time Google Cloud project with your own Desktop
+  OAuth client ([setup](skills/google-photo/references/setup.md)); optional `ffmpeg`, for
+  video frames on the contact sheets.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 

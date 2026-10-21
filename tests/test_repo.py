@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -35,16 +37,23 @@ def _pep723(path):
                                  for line in m.group(1).splitlines(keepends=True)))
 
 
-def test_pep723_pins_match_requirements():
-    scripts = ROOT / 'skills/hwp-parser/scripts'
-    meta = _pep723(scripts / 'hwp2md.py')
+@pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py')])
+def test_pep723_pins_match_requirements(skill, script):
+    scripts = ROOT / 'skills' / skill / 'scripts'
+    meta = _pep723(scripts / script)
     reqs = [line.strip() for line in (scripts / 'requirements.txt').read_text().splitlines()
             if line.strip() and not line.strip().startswith('#')]
     assert meta['requires-python'] == '==3.11.*'
     assert meta['dependencies'] == reqs
 
 
-SKILL = ROOT / 'skills/hwp-parser'
+SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
+SKILL_IDS = [skill.name for skill in SKILLS]
+KEYWORDS = {'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker']}
+
+
+def test_skill_set():
+    assert SKILL_IDS == ['google-photo', 'hwp-parser']
 
 
 def _frontmatter(path):
@@ -61,28 +70,35 @@ def _frontmatter(path):
     return fields
 
 
-def test_skill_frontmatter():
-    meta = _frontmatter(SKILL / 'SKILL.md')
-    assert meta['name'] == SKILL.name
+@pytest.mark.parametrize('skill', SKILLS, ids=SKILL_IDS)
+def test_skill_frontmatter(skill):
+    meta = _frontmatter(skill / 'SKILL.md')
+    assert meta['name'] == skill.name
     description = meta['description']
     assert description.strip() and len(description) <= 1024
-    for word in ['HWP', 'HWPX', 'Markdown']:
+    for word in KEYWORDS[skill.name]:
         assert word in description
 
 
-def test_errors_reference_complete():
+@pytest.mark.parametrize('skill,module', [
+    ('hwp-parser', 'hwp2md'),
+    ('google-photo', 'gphoto.errors'),
+])
+def test_errors_reference_complete(skill, module):
+    import importlib
     import sys
-    sys.path.insert(0, str(SKILL / 'scripts'))
-    import hwp2md
-    errors = (SKILL / 'references/errors.md').read_text(encoding='utf-8')
-    missing = [code for code in hwp2md.MESSAGES if f'`{code}`' not in errors]
+    sys.path.insert(0, str(ROOT / 'skills' / skill / 'scripts'))
+    messages = importlib.import_module(module).MESSAGES
+    errors = (ROOT / 'skills' / skill / 'references/errors.md').read_text(encoding='utf-8')
+    missing = [code for code in messages if f'`{code}`' not in errors]
     assert not missing, missing
 
 
-def test_skill_links_resolve():
+@pytest.mark.parametrize('skill', SKILLS, ids=SKILL_IDS)
+def test_skill_links_resolve(skill):
     import re
-    skill_md = SKILL / 'SKILL.md'
-    docs = [skill_md, *sorted((SKILL / 'references').glob('*.md'))]
+    skill_md = skill / 'SKILL.md'
+    docs = [skill_md, *sorted((skill / 'references').glob('*.md'))]
     for doc in docs:
         text = re.sub(r'```.*?```|`[^`\n]*`', '', doc.read_text(encoding='utf-8'), flags=re.S)
         for target in re.findall(r'\]\(([^)\s]+)\)', text):
@@ -121,11 +137,11 @@ def test_hermes_register():
     import pathlib
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
-    assert len(ctx.calls) == 1
-    name, path, description = ctx.calls[0]
-    assert name == 'hwp-parser'
-    assert isinstance(path, pathlib.Path) and path.name == 'SKILL.md' and path.is_file()
-    assert description.strip() and description == _frontmatter(SKILL / 'SKILL.md')['description']
+    assert [name for name, _, _ in ctx.calls] == ['google-photo', 'hwp-parser']
+    for (name, path, description), skill in zip(ctx.calls, SKILLS):
+        assert name == skill.name
+        assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()
+        assert description.strip() and description == _frontmatter(skill / 'SKILL.md')['description']
 
 
 def test_hermes_register_frontmatter_edge_cases(tmp_path):
@@ -207,6 +223,7 @@ _DENYLIST = {
     '9e06e62fc54810d53d163875090d6154251a958bac0d623d991e52772fcc4c2f',
     '62a88e9c7af9f09da30271316f8cc165b8252524fefd7e6710607cdded35ca02',
     '95640109ddd9cb801caf47c841d80a95ee2ff1a1083257146f4f41dd808751e9',
+    '24a9fd4373701b85f8e7a488fe416a3ab760aff1ca2d08448e5fecbc1cc43032',
 }
 
 
