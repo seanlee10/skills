@@ -105,8 +105,8 @@ PDF, Word 파일은 지원하지 않으며 암호 해제도 하지 않습니다.
 요청하면 에이전트가 붙이는 옵션:
 
 - `--ocr`: 내장 이미지 속 글자를 로컬 OCR로 읽습니다(한국어·영어 데이터 포함).
-- `--pdf FILE` (또는 실험 기능 `--pdf auto`, LibreOffice 사용): 같은 문서를 PDF로 렌더링한
-  결과에서, 직접 추출로 놓친 텍스트를 덧붙입니다.
+- `--pdf FILE` (또는 실험 기능 `--pdf auto`, HWP 5 전용, LibreOffice 사용): 같은 문서를
+  PDF로 렌더링한 결과에서, 직접 추출로 놓친 텍스트를 덧붙입니다.
 - `--vlm groq` / `--vlm xai`: 실험 기능. 비전 모델이 내장 이미지를 읽고 설명을 붙입니다.
 
 **처음 쓰기 전에:** `uv` 말고는 필요 없습니다. `--pdf auto`에는 LibreOffice가, `--vlm`에는
@@ -184,7 +184,7 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
 
 문서: [SKILL.md](skills/google-photo/SKILL.md) ·
 [설정](skills/google-photo/references/setup.md) ·
-[고르기 기준과 picks.json](skills/google-photo/references/curation.md) ·
+[선별 기준과 picks.json](skills/google-photo/references/curation.md) ·
 [오류 코드](skills/google-photo/references/errors.md) (모두 영어)
 
 ### kipris-search
@@ -198,11 +198,12 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
 - `삼성전자가 출원한 이차전지 특허 찾아줘.`
 - `특허 출원 1020140061596 지금 상태가 어때?`
 
-**처음 쓰기 전에:** 필요한 것은 없습니다. 에이전트가 자기 브라우저 도구로 공개 KIPRIS
-웹사이트를 검색합니다. 원하면 [KIPRISPlus](https://plus.kipris.or.kr/)에서 API 키를 발급받고(특허·실용,
-상표, 디자인 상품마다 따로 신청), 직접 연 터미널에서
+**처음 쓰기 전에:** 필요한 것은 없습니다. 에이전트에 있는 브라우저 도구로 공개 KIPRIS
+웹사이트를 검색합니다. 원하면 [KIPRISPlus](https://plus.kipris.or.kr/)에서 API 키를
+발급받고, 필요한 상품(특허·실용, 상표, 디자인)마다 따로 신청하세요. 상품마다 권한과 이용
+기간이 따로 있습니다. 키는 직접 연 터미널에서
 `uv run <스킬 폴더>/scripts/kipris_api.py configure`로 등록하세요(입력은 화면에 보이지 않고,
-전체 경로는 에이전트에게 물어보면 됩니다). 키는 채팅에 붙여 넣지 않습니다. 그러면 에이전트가
+전체 경로는 에이전트에게 물어보면 됩니다). 채팅에는 붙여 넣지 마세요. 그러면 에이전트가
 목록 검색에 API 도우미를 씁니다
 ([api.md](skills/kipris-search/references/api.md#registering-the-key), 영어).
 

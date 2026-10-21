@@ -19,9 +19,11 @@ not need a billing account.
   letter and not ending with a hyphen, e.g. `my-photo-picker-2026`. If the ID is taken,
   pick another. The examples below use `my-photo-picker-2026`: replace it with yours
   everywhere, including in the console links.
-- Where the skill lives, for the commands in steps 5–6: `<this skill's folder>` is
-  `skills/google-photo` in a clone of the repository, or `${CLAUDE_SKILL_DIR}` inside
-  Claude Code; your agent can also tell you the full path.
+- Where the skill lives, for the commands in steps 5–6 (`check`, `auth`): first ask your
+  agent for the full path to `gphoto.py` in the installed skill, and use that in place of
+  `<this skill's folder>/scripts/gphoto.py`. In a clone of the repository the folder is
+  `skills/google-photo`. (Inside Claude Code the agent sees the folder as
+  `${CLAUDE_SKILL_DIR}`; that variable is not set in your own terminal.)
 
 ## 1. Create a project
 

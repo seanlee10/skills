@@ -105,8 +105,8 @@ without `--force`. Not for HWP 3 or older, PDFs or Word files; no decryption.
 Options the agent adds when you ask:
 
 - `--ocr`: read text inside embedded images with local OCR (bundled Korean/English data).
-- `--pdf FILE` (or experimental `--pdf auto`, via LibreOffice): add text that direct
-  extraction missed from a PDF rendering of the same document.
+- `--pdf FILE` (or experimental `--pdf auto`, HWP 5 only, via LibreOffice): add text that
+  direct extraction missed from a PDF rendering of the same document.
 - `--vlm groq` / `--vlm xai`: experimental; a vision model describes the embedded images.
 
 **Before first use:** nothing beyond `uv`. `--pdf auto` needs LibreOffice; `--vlm` needs
@@ -201,9 +201,9 @@ right does not exist", and gives no opinion on registrability or infringement.
 - `What is the status of Korean patent application 1020140061596?`
 
 **Before first use:** nothing; the agent searches the public KIPRIS website with its own
-browser tool.
-Optionally get a [KIPRISPlus](https://plus.kipris.or.kr/) API key (apply there for each
-product: patent/utility, trademark, design) and register it yourself in your own terminal
+browser tool. Optionally get a [KIPRISPlus](https://plus.kipris.or.kr/) API key and apply
+there for each product you need (patent/utility, trademark, design); each product has its
+own permission and period. Register the key yourself in your own terminal
 with `uv run <skill folder>/scripts/kipris_api.py configure` (hidden input; ask your agent
 for the full path), never in the chat. The agent then uses the API helper for list searches
 ([api.md](skills/kipris-search/references/api.md#registering-the-key)).

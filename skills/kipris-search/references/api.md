@@ -83,7 +83,7 @@ per-right `results` list. Each successful entry has `ok: true`, `right`, `total`
 time is UTC; tell the user the time zone or convert it to their local time.
 
 `records` normalises common fields: title, numbers, dates, applicant, status. Patents also
-give abstract and IPC, trademarks class and registered owner (`owner`), designs class and
+give abstract and IPC, trademarks class, registered owner (`owner`) and Vienna code (`vienna_code`), designs class and
 creator (`inventor`). A tag missing from the API response is `null`; an empty tag is an
 empty string. Repeated tags are kept as an array. The holder value in a list does not
 verify the currently valid rights holder: never write that it does. Never cite an image URL
