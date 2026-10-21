@@ -1,4 +1,5 @@
 import contextlib
+import http.client
 import io
 import json
 import os
@@ -447,3 +448,81 @@ def test_script_runs_standalone_and_writes_no_bytecode(script, home):
                           capture_output=True, text=True, env=env, timeout=60)
     assert proc.returncode == 2 and proc.stdout == ''
     assert json.loads(proc.stderr.strip().splitlines()[-1])['error'] == 'INVALID_SEARCH_ARGUMENTS'
+
+
+# --- review fixes ---------------------------------------------------------------------------
+
+def _body(payload=None, error=None):
+    body = mock.MagicMock()
+    reader = body.__enter__.return_value.read
+    if error is not None:
+        reader.side_effect = error
+    else:
+        reader.side_effect = lambda n: payload[:n]
+    return body
+
+
+@pytest.mark.parametrize('error,on_read', [
+    (http.client.IncompleteRead(b'partial'), True), (http.client.BadStatusLine('garbage'), False),
+    (http.client.LineTooLong('header'), False),
+], ids=['IncompleteRead-on-read', 'BadStatusLine-on-open', 'LineTooLong-on-open'])
+def test_http_protocol_errors_fail_only_that_right(error, on_read):
+    configure()
+    opener = mock.Mock()
+    opener.open.side_effect = [_body(response()), _body(error=error) if on_read else error, _body(response())]
+    with mock.patch.object(api.urllib.request, 'build_opener', return_value=opener):
+        code, data, _, _ = cli('search', '--right', 'all', '--query', '커피')
+    assert code == 1
+    assert (data['status'], data['ok']) == ('partial', False)
+    assert [r['ok'] for r in data['results']] == [True, False, True]
+    assert data['results'][1]['error'] == 'KIPRIS_NETWORK_ERROR'
+    assert data['results'][0]['total'] == 0 and data['results'][2]['total'] == 0
+
+
+def _open_fds():
+    return len(os.listdir('/dev/fd'))
+
+
+def test_directory_at_key_path_is_unsafe_not_a_crash():
+    api.key_path().mkdir(parents=True)
+    before = _open_fds()
+    code, data, _, _ = cli('status')
+    assert (code, data['configured']) == (0, False)
+    with no_fetch():
+        assert failure('search', '--right', 'trademark', '--query', '커피') == 'KEY_FILE_UNSAFE'
+    with pytest.raises(api.Failure):
+        for _ in range(20):
+            api.load_key()
+    assert _open_fds() <= before
+
+
+def test_unsafe_key_file_does_not_leak_descriptors():
+    configure()
+    api.key_path().chmod(0o644)
+    before = _open_fds()
+    for _ in range(20):
+        with pytest.raises(api.Failure):
+            api.load_key()
+    assert _open_fds() <= before
+
+
+@pytest.mark.parametrize('payload', [
+    ('<!DOCTYPE r [<!ENTITY a "bee">]>' + response('<item><title>&a;</title></item>', total=1).decode())
+    .encode('utf-16'),
+    ('<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE r [<!ENTITY a "bee">]>'
+     + response('<item><title>&a;</title></item>', total=1).decode()).encode('utf-16'),
+    response().decode().encode('utf-16-le'),
+    b'\x00<response/>',
+    b'garbage<response/>',
+    b'',
+], ids=['utf16-bom-doctype', 'utf16-decl-doctype', 'utf16le-no-bom', 'nul-first', 'garbage-first', 'empty'])
+def test_non_ascii_xml_start_is_rejected(payload):
+    with pytest.raises(api.Failure) as caught:
+        api.parse_page(payload, api.SERVICES['trademark'], 1)
+    assert caught.value.code == 'RESPONSE_MALFORMED'
+
+
+@pytest.mark.parametrize('prefix', [b'\xef\xbb\xbf', b'  \r\n\t', b'\xef\xbb\xbf\n'])
+def test_utf8_bom_and_leading_whitespace_are_accepted(prefix):
+    result = api.parse_page(prefix + response(), api.SERVICES['trademark'], 1)
+    assert result['total'] == 0

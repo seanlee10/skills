@@ -18,6 +18,10 @@ through this helper so the credential and the request URL never appear in tool o
 uv run <this skill's folder>/scripts/kipris_api.py configure
 ```
 
+Give the user this command with the resolved absolute path of `kipris_api.py` in place of
+`<this skill's folder>` (in Claude Code, the expanded value of `${CLAUDE_SKILL_DIR}`), so
+they can paste it into their terminal as is; the placeholder itself does not run.
+
 The input is hidden. The key is stored in plain text in `~/.config/kipris-search/api-key`
 with file mode 600 in a folder of mode 700: a file private to the user, outside the
 repository and the skill folder. `configure` refuses to run without an interactive
@@ -86,8 +90,9 @@ as the document's detail link.
 Read counts and lists only from entries with `ok: true`. An entry with `ok: false` carries
 `error` (a code) and `message` (fixed text) and has no `total` or `records`. When some
 products fail, keep the results of the rights that succeeded, but never say the whole
-search is complete. A search with any failed right exits 1 with `"status": "partial"` (even
-when every right failed). Never turn an HTTP error, an API error or a permission or call
+search is complete. A search with any failed right exits 1 with `"status": "partial"`, even
+when every right failed: decide from `ok` and from each entry of `results`, never from
+`partial` alone. Never turn an HTTP error, an API error or a permission or call
 limit problem into zero results. Codes: [errors.md](errors.md).
 
 For a first key check, run one small list search only. Check all three services with `all`

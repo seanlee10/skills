@@ -498,7 +498,9 @@ details, claims, images and current holders.
    need (patent/utility, trademark, design); each product has its own permission and
    period. The agent never applies for products, paid services or alerts for you.
 2. Register the key yourself, in a terminal you opened (input is hidden). **Never paste the
-   key into the chat**; the agent never runs `configure`.
+   key into the chat**; the agent never runs `configure`. Run it from a clone of this
+   repository as below, or ask your agent for the full path to `kipris_api.py` in the
+   installed skill and run `uv run <that path> configure`.
 
 ```sh
 uv run skills/kipris-search/scripts/kipris_api.py configure
@@ -508,6 +510,8 @@ The key is stored in `~/.config/kipris-search/api-key` (mode 600, folder mode 70
 `configure` again replaces it. `configure` and `status` never call the API.
 
 ### Run it yourself
+
+From a clone of this repository (or with the full path to the installed `kipris_api.py`):
 
 ```sh
 uv run skills/kipris-search/scripts/kipris_api.py status
@@ -533,7 +537,8 @@ and `results`, one entry per right. A successful entry has `total`, `returned`, 
 abstract/IPC, owner/class/Vienna code or class/creator), `filters` and `retrieved_at` (UTC). A
 right whose product your key is not licensed for, or any other per-right failure, appears
 as `{"ok":false,"right":...,"error":CODE,"message":...}` while the other rights still
-return results; the command then exits 1. A whole-command failure (no key, bad arguments)
+return results; the command then exits 1. Check `ok` and each entry of `results`:
+`partial` is also used when every right failed. A whole-command failure (no key, bad arguments)
 exits 2 with `{"status":"failed","error":CODE,"message":...}` on stderr. Every code:
 [skills/kipris-search/references/errors.md](skills/kipris-search/references/errors.md).
 

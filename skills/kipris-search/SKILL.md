@@ -62,8 +62,9 @@ uv run "${CLAUDE_SKILL_DIR}/scripts/kipris_api.py" search --right trademark --qu
 `configure` is run by the user, not the agent (see [references/api.md](references/api.md#registering-the-key)).
 Requires [`uv`](https://docs.astral.sh/uv/); the helper uses the Python standard library
 only. `status` and `configure` exit 0 with JSON on stdout. `search` exits 0 when every
-requested right succeeded, and 1 (`"status":"partial"`) when at least one right failed:
-read each entry of `results`. Any whole-command failure exits 2 with the last stderr line
+requested right succeeded, and 1 (`"status":"partial"`) when at least one right failed,
+including when every right failed: decide from the top-level `ok` and the `ok` of each
+entry of `results`, never from `partial` alone. Any whole-command failure exits 2 with the last stderr line
 `{"status":"failed","error":CODE,"message":...}`: look the code up in
 [references/errors.md](references/errors.md) and tell the user the remedy.
 

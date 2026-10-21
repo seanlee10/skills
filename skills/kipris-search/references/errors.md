@@ -10,7 +10,8 @@ contain the key, a URL, a path or any part of a KIPRIS response.
   `{"ok":false,"right":...,"error":CODE,"message":...}` and has no `total` or `records`.
   Entries with `"ok":true` are valid results: report them, say which rights failed, and never
   call the search complete. `partial` is used whenever at least one right failed, also when
-  every requested right failed.
+  every requested right failed, so never rely on `"status":"partial"` alone: check the
+  top-level `ok` and the `ok` of each entry of `results`.
 
 No error is ever zero results. Only an entry with `"ok":true` and `"total":0` means "no
 results for these conditions". The helper never retries; rerunning the same command spends
@@ -30,7 +31,7 @@ another call.
 | `LOCAL_SETUP_FAILED` | The local key setup or input failed (end of input, a file-system or encoding error). | Check that `~/.config` is writable and run `configure` again. |
 | `KEY_NOT_CONFIGURED` | No key file. Nothing was sent. | Use the browser route ([browser-search.md](browser-search.md)), or the user registers a key ([api.md](api.md#registering-the-key)). |
 | `KEY_FILE_UNREADABLE` | The key file could not be opened; a symbolic link is refused. | The user removes the link or fixes the file and runs `configure` again. |
-| `KEY_FILE_UNSAFE` | The key file is not a regular file owned by the user with mode 600 (for example readable by others). | The user runs `configure` again, which rewrites it with mode 600, or `chmod 600` it. Never `cat` the file. |
+| `KEY_FILE_UNSAFE` | The key file is not a regular file owned by the user with mode 600 (for example readable by others, or a folder at that path). | The user runs `configure` again, which rewrites it with mode 600, or `chmod 600` it. Never `cat` the file. |
 | `KEY_INVALID` | The stored key is empty, contains whitespace or is too long. | The user runs `configure` again. |
 
 `status` never fails on a key problem: it reports `"configured": false` instead. Use a
@@ -40,11 +41,11 @@ search's error code to learn why.
 
 | Code | Meaning | What to do |
 | --- | --- | --- |
-| `KIPRIS_NETWORK_ERROR` | KIPRIS could not be reached, or 30 s passed. Not retried. | Report the right as unverified. Retry once later, or use the browser. |
+| `KIPRIS_NETWORK_ERROR` | KIPRIS could not be reached, 30 s passed, or the HTTP exchange broke off (a truncated body, an invalid status or header line). Not retried. | Report the right as unverified. Retry once later, or use the browser. |
 | `KIPRIS_HTTP_ERROR` | KIPRIS answered with an HTTP error. The actual code carries the status: `KIPRIS_HTTP_<status>`, e.g. `KIPRIS_HTTP_403`; all share this message. A redirect is never followed and also ends here (`KIPRIS_HTTP_301` / `302`). | 4xx: check the key and the product permission at KIPRISPlus. 5xx: KIPRIS trouble; retry later or use the browser. |
 | `RESPONSE_TOO_LARGE` | The response exceeded 8 MiB. | Request a smaller `--size`. |
 | `RESPONSE_DTD_OR_ENTITY_FORBIDDEN` | The response declares a DTD or XML entities; rejected for safety. | Report the right as unverified; use the browser. |
-| `RESPONSE_MALFORMED` | Not a KIPRIS XML response (for example an HTML error page). | Not zero results. Retry later or use the browser. |
+| `RESPONSE_MALFORMED` | Not a KIPRIS XML response: for example an HTML error page, or a body that does not start with `<` (after an optional UTF-8 BOM and whitespace), is UTF-16/UTF-32 or contains NUL bytes. | Not zero results. Retry later or use the browser. |
 | `KIPRIS_API_ERROR` | KIPRIS returned an API result code other than `00`. The actual code carries it: `KIPRIS_API_<2-digit code>`, e.g. `KIPRIS_API_30`; a missing or non-numeric result code stays `KIPRIS_API_ERROR`. All share this message. | Usually the key, the product permission or its period, or the call limit. Check the result code in the official KIPRISPlus specification and tell the user; never read it as zero results. |
 | `KIPRIS_REQUEST_FAILED` | The response says `successYN` = `N`. | Report the right as unverified. |
 | `RESPONSE_COUNT_MISSING` | The response has no total count or page information. | Not zero results; report the right as unverified. |

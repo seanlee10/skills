@@ -19,6 +19,7 @@ sys.dont_write_bytecode = True  # never leave __pycache__ inside the skill folde
 
 import argparse
 import getpass
+import http.client
 import json
 import os
 import re
@@ -158,10 +159,16 @@ def load_key():
         raise Failure('KEY_NOT_CONFIGURED') from None
     except OSError:
         raise Failure('KEY_FILE_UNREADABLE') from None
-    with os.fdopen(descriptor, 'r', encoding='utf-8') as stream:
-        info = os.fstat(stream.fileno())
+    try:
+        # Check the raw descriptor first: a directory opens with O_RDONLY, but fdopen would fail.
+        info = os.fstat(descriptor)
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
             raise Failure('KEY_FILE_UNSAFE')
+        stream = os.fdopen(descriptor, 'r', encoding='utf-8')
+    except BaseException:
+        os.close(descriptor)
+        raise
+    with stream:
         try:
             key = stream.read(4097).strip()
         except UnicodeError:
@@ -228,7 +235,8 @@ def fetch(service, params, key):
     except urllib.error.HTTPError as error:
         status_code = error.code if isinstance(error.code, int) and 100 <= error.code <= 599 else None
         raise Failure(f'KIPRIS_HTTP_{status_code}' if status_code else 'KIPRIS_HTTP_ERROR') from None
-    except (urllib.error.URLError, TimeoutError, OSError):
+    except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
+        # HTTPException covers IncompleteRead, BadStatusLine and LineTooLong, which are not OSError.
         raise Failure('KIPRIS_NETWORK_ERROR') from None
     if len(payload) > MAX_RESPONSE:
         raise Failure('RESPONSE_TOO_LARGE')
@@ -236,6 +244,11 @@ def fetch(service, params, key):
 
 
 def parse_page(payload, service, requested_page):
+    # Only ASCII-compatible XML is accepted, so the DTD/entity check below sees the real bytes:
+    # UTF-16/UTF-32 (with or without a BOM) or NUL bytes would hide a declaration from it.
+    start = payload[3:] if payload.startswith(b'\xef\xbb\xbf') else payload
+    if not start.lstrip(b' \t\r\n').startswith(b'<') or b'\x00' in payload:
+        raise Failure('RESPONSE_MALFORMED')
     if re.search(br'<!\s*(DOCTYPE|ENTITY)', payload, re.I):
         raise Failure('RESPONSE_DTD_OR_ENTITY_FORBIDDEN')
     try:
