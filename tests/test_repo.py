@@ -50,12 +50,12 @@ def test_pep723_pins_match_requirements(skill, script):
 
 SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
 SKILL_IDS = [skill.name for skill in SKILLS]
-KEYWORDS = {'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
+KEYWORDS = {'email-draft': ['email', 'Gmail', 'rich text'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
             'kipris-search': ['KIPRIS', 'patent', 'trademark']}
 
 
 def test_skill_set():
-    assert SKILL_IDS == ['google-photo', 'hwp-parser', 'kipris-search']
+    assert SKILL_IDS == ['email-draft', 'google-photo', 'hwp-parser', 'kipris-search']
 
 
 def _frontmatter(path):
@@ -140,7 +140,7 @@ def test_hermes_register():
     import pathlib
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
-    assert [name for name, _, _ in ctx.calls] == ['google-photo', 'hwp-parser', 'kipris-search']
+    assert [name for name, _, _ in ctx.calls] == ['email-draft', 'google-photo', 'hwp-parser', 'kipris-search']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name
         assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()

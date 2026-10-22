@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Sean Lee가 만든 에이전트 스킬 모음입니다. 한글 문서 변환, 한국 특허·상표 검색, Google 포토
-정리를 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
+정리, 이메일 초안 작성을 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
 묶여 있고, 그 밖의 에이전트에는 `npx skills`로 설치할 수 있습니다.
 
 ## 설치
@@ -75,7 +75,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 </details>
 
 지금까지 검증한 것은 로컬 Claude Code 설치뿐입니다. Codex, Devin, Hermes, `npx skills` 설치는
-저장소를 공개한 뒤에 검증합니다. 모든 스킬은 [`uv`](https://docs.astral.sh/uv/)로 스크립트를
+저장소를 공개한 뒤에 검증합니다. Python 스킬은 [`uv`](https://docs.astral.sh/uv/)로 스크립트를
 실행합니다([요구 사항](#요구-사항) 참고).
 
 설치가 끝나면 에이전트에게 그냥 요청하면 됩니다. 에이전트가 요청을 보고 알맞은 스킬을 고릅니다
@@ -90,6 +90,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [hwp-parser](skills/hwp-parser/SKILL.md) | `.hwp` / `.hwpx` 문서를 HTML 표와 이미지가 포함된 Markdown으로 변환 | 없음 | 기본은 사용 안 함, `--vlm`을 쓸 때만 Groq 또는 xAI |
 | [google-photo](skills/google-photo/SKILL.md) | Google 포토에서 특정 인물·행사·연도의 사진과 동영상을 모으고 하이라이트를 골라 줌 | Google Cloud 1회 설정 | Google |
 | [kipris-search](skills/kipris-search/SKILL.md) | KIPRIS에서 한국 특허·실용신안·상표·디자인 검색 | 없음 (KIPRISPlus 키는 선택) | KIPRIS |
+| [email-draft](skills/email-draft/SKILL.md) | 고객·파트너 이메일을 일관된 비즈니스 문체로 작성하고, Gmail에 그대로 붙여 넣을 수 있는 서식 있는 텍스트로 클립보드에 복사 | macOS | 사용 안 함 |
 
 ### hwp-parser
 
@@ -216,6 +217,27 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
 [브라우저 검색](skills/kipris-search/references/browser-search.md) ·
 [오류 코드](skills/kipris-search/references/errors.md) (모두 영어)
 
+### email-draft
+
+고객이나 파트너에게 보낼 이메일(미팅 요약, 후속 연락, 다음 단계, 지원 답변)을 작성해 서식 있는
+텍스트로 클립보드에 넣습니다. 그래서 Gmail에 Cmd+V로 붙여 넣으면 `**`, `-` 같은 기호가 그대로
+나오지 않고 굵은 제목, 글머리표, 번호 단계가 유지됩니다. 에이전트는 제목 줄과 일반 텍스트
+미리보기를 함께 보여 주고, 자기 메모는 이메일 본문에 넣지 않습니다. 문체는 정해져 있습니다:
+번호 붙은 Title Case 섹션, 한 문장에 요구 사항 하나, 굵은 동사로 시작하는 완결된 문장의
+글머리표, 짧은 도움 제안으로 맺는 끝인사.
+
+- `오늘 통화 내용으로 Alex와 Jordan에게 보낼 요약 메일 써줘. 50건으로 파일럿 하기로 했어.`
+- `이 메일 좀 덜 딱딱하게 다듬어 줘: <붙여 넣은 메일>`
+- `금요일까지 수정 견적을 보내 달라는 후속 메일을 업체에 써줘.`
+
+**처음 쓰기 전에:** 필요한 것은 없습니다. 클립보드 단계가 `osascript`를 쓰므로 macOS에서만
+됩니다. 다른 OS에서는 에이전트가 HTML 파일을 남기고 그 경로를 알려 줍니다.
+
+**내 컴퓨터 밖으로 나가는 것:** 원래 에이전트의 모델 제공자에게 보내는 내용 외에는 없습니다.
+스크립트는 로컬 클립보드에만 씁니다.
+
+문서: [SKILL.md](skills/email-draft/SKILL.md) (영어)
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -226,6 +248,7 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
   프로젝트(한 번만 설정, [설정](skills/google-photo/references/setup.md)). 썸네일 모음에
   동영상 장면을 넣으려면 `ffmpeg`(선택).
 - kipris-search: `uv` 말고는 없음(표준 라이브러리만 사용). KIPRISPlus API 키는 선택.
+- email-draft: 클립보드 단계에 macOS 필요. `uv`나 Python은 필요 없음.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 

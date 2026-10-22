@@ -2,7 +2,7 @@
 
 # seanlee10/skills
 
-Agent skills by Sean Lee for Korean documents, Korean IP search and Google Photos, packaged
+Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos and email drafts, packaged
 as one plugin (`seanlee10-skills`) for Claude Code, Codex, Devin and Hermes, and installable
 into other agents with `npx skills`.
 
@@ -75,8 +75,8 @@ Replace `<agent>` with your agent's identifier (see `npx skills@latest --help`).
 </details>
 
 Only the local Claude Code install has been verified so far; the Codex, Devin, Hermes and
-`npx skills` installs are verified only after publication. Every skill runs its script with
-[`uv`](https://docs.astral.sh/uv/) (see [Requirements](#requirements)).
+`npx skills` installs are verified only after publication. The Python skills run their scripts
+with [`uv`](https://docs.astral.sh/uv/) (see [Requirements](#requirements)).
 
 Once installed, just ask your agent; it picks the skill from your request (in Hermes, name
 the skill). To run a script yourself, clone the repository and use the commands in the
@@ -90,6 +90,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [hwp-parser](skills/hwp-parser/SKILL.md) | Converts `.hwp` / `.hwpx` documents to Markdown with HTML tables and images. | Nothing | None by default; Groq or xAI only with `--vlm` |
 | [google-photo](skills/google-photo/SKILL.md) | Collects a person's, event's or year's photos and videos from Google Photos and curates a highlight set. | One-time Google Cloud setup | Google |
 | [kipris-search](skills/kipris-search/SKILL.md) | Searches KIPRIS for Korean patents, utility models, trademarks and designs. | Nothing; optional KIPRISPlus key | KIPRIS |
+| [email-draft](skills/email-draft/SKILL.md) | Drafts customer and partner emails in a consistent business style and copies them to the clipboard as Gmail-ready rich text. | macOS | None |
 
 ### hwp-parser
 
@@ -218,6 +219,27 @@ Docs: [SKILL.md](skills/kipris-search/SKILL.md) ·
 [browser search](skills/kipris-search/references/browser-search.md) ·
 [error codes](skills/kipris-search/references/errors.md)
 
+### email-draft
+
+Drafts a customer or partner email (meeting recap, follow-up, next steps, support reply) and
+puts it on the clipboard as rich text, so Cmd+V into Gmail keeps the bold headers, bullets
+and numbered steps instead of pasting literal `**` and `-`. The agent replies with the
+subject line and a plain-text preview, and keeps its own notes out of the email. The style
+is fixed: numbered Title Case sections, one requirement per sentence, full-sentence bullets
+with bold action verbs, and a short help-offer sign-off.
+
+- `Draft a recap email to Alex and Jordan from today's call: we agreed on a 50-case pilot.`
+- `Rework this email so it sounds less blunt: <pasted email>`
+- `Write a follow-up to the vendor asking for the revised quote by Friday.`
+
+**Before first use:** nothing; macOS only (the clipboard step uses `osascript`). Elsewhere
+the agent leaves the HTML file and gives you its path.
+
+**What leaves your machine:** nothing beyond what you already send your agent's model
+provider; the script only writes to the local clipboard.
+
+Docs: [SKILL.md](skills/email-draft/SKILL.md)
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -228,6 +250,7 @@ Docs: [SKILL.md](skills/kipris-search/SKILL.md) ·
   OAuth client ([setup](skills/google-photo/references/setup.md)); optional `ffmpeg`, for
   video frames on the contact sheets.
 - kipris-search: nothing beyond `uv` (standard library only); optional KIPRISPlus API key.
+- email-draft: macOS for the clipboard step; no `uv` or Python needed.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 
