@@ -38,7 +38,8 @@ def _pep723(path):
 
 
 @pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py'),
-                                          ('kipris-search', 'kipris_api.py')])
+                                          ('kipris-search', 'kipris_api.py'),
+                                          ('ga4-blog-report', 'ga4_report.py')])
 def test_pep723_pins_match_requirements(skill, script):
     scripts = ROOT / 'skills' / skill / 'scripts'
     meta = _pep723(scripts / script)
@@ -50,12 +51,13 @@ def test_pep723_pins_match_requirements(skill, script):
 
 SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
 SKILL_IDS = [skill.name for skill in SKILLS]
-KEYWORDS = {'email-draft': ['email', 'Gmail', 'rich text'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
+KEYWORDS = {'email-draft': ['email', 'Gmail', 'rich text'],
+            'ga4-blog-report': ['GA4', 'Google Analytics', 'AI'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
             'kipris-search': ['KIPRIS', 'patent', 'trademark']}
 
 
 def test_skill_set():
-    assert SKILL_IDS == ['email-draft', 'google-photo', 'hwp-parser', 'kipris-search']
+    assert SKILL_IDS == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search']
 
 
 def _frontmatter(path):
@@ -86,6 +88,7 @@ def test_skill_frontmatter(skill):
     ('hwp-parser', 'hwp2md'),
     ('google-photo', 'gphoto.errors'),
     ('kipris-search', 'kipris_api'),
+    ('ga4-blog-report', 'ga4_report'),
 ])
 def test_errors_reference_complete(skill, module):
     import importlib
@@ -140,7 +143,8 @@ def test_hermes_register():
     import pathlib
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
-    assert [name for name, _, _ in ctx.calls] == ['email-draft', 'google-photo', 'hwp-parser', 'kipris-search']
+    assert [name for name, _, _ in ctx.calls] == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser',
+                                                'kipris-search']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name
         assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()

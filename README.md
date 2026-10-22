@@ -2,7 +2,8 @@
 
 # seanlee10/skills
 
-Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos and email drafts, packaged
+Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos, email drafts and GA4
+blog reports, packaged
 as one plugin (`seanlee10-skills`) for Claude Code, Codex, Devin and Hermes, and installable
 into other agents with `npx skills`.
 
@@ -91,6 +92,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [google-photo](skills/google-photo/SKILL.md) | Collects a person's, event's or year's photos and videos from Google Photos and curates a highlight set. | One-time Google Cloud setup | Google |
 | [kipris-search](skills/kipris-search/SKILL.md) | Searches KIPRIS for Korean patents, utility models, trademarks and designs. | Nothing; optional KIPRISPlus key | KIPRIS |
 | [email-draft](skills/email-draft/SKILL.md) | Drafts customer and partner emails in a consistent business style and copies them to the clipboard as Gmail-ready rich text. | macOS | None |
+| [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
 
 ### hwp-parser
 
@@ -240,6 +242,42 @@ provider; the script only writes to the local clipboard.
 
 Docs: [SKILL.md](skills/email-draft/SKILL.md)
 
+### ga4-blog-report
+
+Reports the Google Analytics 4 (GA4) traffic of a blog, or any site section under a path
+prefix (default `/blog/`), through the GA4 Data API: pageviews and sessions per post, the top
+traffic sources, and how many visits AI assistants and answer engines (ChatGPT, Perplexity,
+Gemini, Copilot, Claude and others) sent, in total and per post. The raw rows go to a CSV;
+the agent reports from totals the script computes, never from estimates.
+
+- `How did my blog posts do in GA4 over the last 28 days?`
+- `이번 달 블로그 유입 중에 ChatGPT나 퍼플렉시티에서 온 게 얼마나 돼?`
+- `Which sources sent the most traffic to /blog/ from 2026-10-01 to 2026-10-21?`
+
+**Before first use:** about 10 minutes, once, by hand. No command can do these steps:
+
+1. In a Google Cloud project (no billing needed), **enable the Google Analytics Data API**
+   ([console](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com), or
+   `gcloud services enable analyticsdata.googleapis.com --project <project ID>`).
+2. In the same project, create a service account and download a JSON key.
+3. In GA4 **Admin → Property access management**, add the service account's email as
+   **Viewer** (you must be an Administrator of the property).
+4. Copy the numeric **Property ID** from **Admin → Property details** (not the `G-…`
+   measurement ID).
+
+Then have the agent run `configure` with the key file's path and the property ID, and delete
+the downloaded key. Your own Google sign-in and gcloud's default credentials do not work for
+GA4. Step by step: [setup.md](skills/ga4-blog-report/references/setup.md).
+
+**What leaves your machine:** the script talks only to `oauth2.googleapis.com` (to exchange
+the signed key for a read-only token) and `analyticsdata.googleapis.com`. The key stays in
+`~/.config/ga4-blog-report/` with mode 600 and is never printed. The report's numbers, page
+paths and source names go to your agent's model provider when the agent reads them.
+
+Docs: [SKILL.md](skills/ga4-blog-report/SKILL.md) ·
+[setup](skills/ga4-blog-report/references/setup.md) ·
+[error codes](skills/ga4-blog-report/references/errors.md)
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -251,6 +289,9 @@ Docs: [SKILL.md](skills/email-draft/SKILL.md)
   video frames on the contact sheets.
 - kipris-search: nothing beyond `uv` (standard library only); optional KIPRISPlus API key.
 - email-draft: macOS for the clipboard step; no `uv` or Python needed.
+- ga4-blog-report: a GA4 property you administer and a Google Cloud project with the
+  Analytics Data API enabled and a service account key
+  ([setup](skills/ga4-blog-report/references/setup.md)).
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 

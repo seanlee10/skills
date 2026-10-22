@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Sean Lee가 만든 에이전트 스킬 모음입니다. 한글 문서 변환, 한국 특허·상표 검색, Google 포토
-정리, 이메일 초안 작성을 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
+정리, 이메일 초안 작성, GA4 블로그 리포트를 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
 묶여 있고, 그 밖의 에이전트에는 `npx skills`로 설치할 수 있습니다.
 
 ## 설치
@@ -91,6 +91,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [google-photo](skills/google-photo/SKILL.md) | Google 포토에서 특정 인물·행사·연도의 사진과 동영상을 모으고 하이라이트를 골라 줌 | Google Cloud 1회 설정 | Google |
 | [kipris-search](skills/kipris-search/SKILL.md) | KIPRIS에서 한국 특허·실용신안·상표·디자인 검색 | 없음 (KIPRISPlus 키는 선택) | KIPRIS |
 | [email-draft](skills/email-draft/SKILL.md) | 고객·파트너 이메일을 일관된 비즈니스 문체로 작성하고, Gmail에 그대로 붙여 넣을 수 있는 서식 있는 텍스트로 클립보드에 복사 | macOS | 사용 안 함 |
+| [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
 
 ### hwp-parser
 
@@ -238,6 +239,40 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
 
 문서: [SKILL.md](skills/email-draft/SKILL.md) (영어)
 
+### ga4-blog-report
+
+블로그(또는 경로 접두사 아래의 사이트 영역, 기본값 `/blog/`)의 Google 애널리틱스 4(GA4) 유입을
+GA4 Data API로 조회합니다. 글별 조회수와 세션, 상위 유입 경로, 그리고 ChatGPT·퍼플렉시티·
+제미나이·코파일럿·Claude 같은 AI 서비스가 보낸 방문을 전체와 글별로 정리합니다. 원본 행은 CSV로
+저장하고, 에이전트는 어림값이 아니라 스크립트가 계산한 합계로 보고합니다.
+
+- `지난 28일 동안 GA4에서 블로그 글별 성과 어땠어?`
+- `이번 달 블로그 유입 중에 ChatGPT나 퍼플렉시티에서 온 게 얼마나 돼?`
+- `2026-10-01부터 2026-10-21까지 /blog/로 유입을 가장 많이 보낸 경로는?`
+
+**처음 쓰기 전에:** 10분 정도, 한 번만 직접 해야 합니다. 명령으로는 할 수 없는 단계입니다.
+
+1. Google Cloud 프로젝트(결제 계정 필요 없음)에서 **Google Analytics Data API를 사용 설정**합니다
+   ([콘솔](https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com), 또는
+   `gcloud services enable analyticsdata.googleapis.com --project <프로젝트 ID>`).
+2. 같은 프로젝트에서 서비스 계정을 만들고 JSON 키를 내려받습니다.
+3. GA4 **관리 → 속성 액세스 관리**에서 서비스 계정 이메일을 **뷰어**로 추가합니다(속성
+   관리자 권한이 필요합니다).
+4. **관리 → 속성 세부정보**에서 숫자로 된 **속성 ID**를 확인합니다(`G-…` 측정 ID가 아닙니다).
+
+그다음 에이전트에게 키 파일 경로와 속성 ID로 `configure`를 실행해 달라고 하고, 내려받은 키는
+지우세요. 본인 Google 로그인이나 gcloud 기본 인증으로는 GA4를 조회할 수 없습니다. 단계별 안내:
+[setup.md](skills/ga4-blog-report/references/setup.md) (영어).
+
+**내 컴퓨터 밖으로 나가는 것:** 스크립트는 `oauth2.googleapis.com`(서명한 키를 읽기 전용
+토큰으로 바꿀 때)과 `analyticsdata.googleapis.com`에만 접속합니다. 키는
+`~/.config/ga4-blog-report/`에 권한 600으로 저장되고 출력에 나오지 않습니다. 에이전트가 리포트를
+읽을 때 수치, 페이지 경로, 유입 경로 이름이 에이전트의 모델 제공자에게 전달됩니다.
+
+문서: [SKILL.md](skills/ga4-blog-report/SKILL.md) ·
+[설정](skills/ga4-blog-report/references/setup.md) ·
+[오류 코드](skills/ga4-blog-report/references/errors.md) (모두 영어)
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -249,6 +284,8 @@ Claude Code라면 Anthropic)로 전달됩니다. 원본 파일은 열지 않습�
   동영상 장면을 넣으려면 `ffmpeg`(선택).
 - kipris-search: `uv` 말고는 없음(표준 라이브러리만 사용). KIPRISPlus API 키는 선택.
 - email-draft: 클립보드 단계에 macOS 필요. `uv`나 Python은 필요 없음.
+- ga4-blog-report: 관리자 권한이 있는 GA4 속성, 그리고 Analytics Data API를 켜고 서비스
+  계정 키를 만든 Google Cloud 프로젝트([설정](skills/ga4-blog-report/references/setup.md)).
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 
