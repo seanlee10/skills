@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Download"
+  short_description: "Save a YouTube link as a local H.264/AAC MP4"
+  default_prompt: "Use $youtube-download to save this YouTube video as an MP4."

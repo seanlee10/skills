@@ -2,8 +2,8 @@
 
 # seanlee10/skills
 
-Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos, email drafts and GA4
-blog reports, packaged
+Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos, email drafts, GA4
+blog reports and YouTube downloads, packaged
 as one plugin (`seanlee10-skills`) for Claude Code, Codex, Devin and Hermes, and installable
 into other agents with `npx skills`.
 
@@ -93,6 +93,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [kipris-search](skills/kipris-search/SKILL.md) | Searches KIPRIS for Korean patents, utility models, trademarks and designs. | Nothing; optional KIPRISPlus key | KIPRIS |
 | [email-draft](skills/email-draft/SKILL.md) | Drafts customer and partner emails in a consistent business style and copies them to the clipboard as Gmail-ready rich text. | macOS | None |
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
+| [youtube-download](skills/youtube-download/SKILL.md) | Saves a YouTube video or Short as a local H.264/AAC MP4. | FFmpeg and Deno or Node | YouTube |
 
 ### hwp-parser
 
@@ -278,6 +279,28 @@ Docs: [SKILL.md](skills/ga4-blog-report/SKILL.md) ·
 [setup](skills/ga4-blog-report/references/setup.md) ·
 [error codes](skills/ga4-blog-report/references/errors.md)
 
+### youtube-download
+
+Downloads one YouTube video as an MP4 with H.264 video and AAC audio. Accepts watch,
+Shorts, Music, embed and youtu.be links. Files go to `~/Downloads/youtube/` by default,
+with the video ID as the filename and a small source metadata JSON alongside it.
+Compatible streams are copied; other codecs are converted with FFmpeg. Existing matching
+files are reused after hash and media validation.
+
+- `Download this YouTube video as an MP4: https://www.youtube.com/watch?v=VIDEO_ID`
+- `이 유튜브 쇼츠 MP4로 저장해줘: <YouTube URL>`
+- `Save this video in ~/Movies at up to 1080p: <YouTube URL>`
+
+**Before first use:** install FFmpeg and a supported JavaScript runtime, Deno or Node.
+On macOS, `brew install ffmpeg deno`. `uv` fetches the pinned yt-dlp dependency.
+Supports macOS and Linux; Windows requires WSL. Downloads one complete video per link;
+does not expand playlists or capture active live streams.
+
+**What leaves your machine:** yt-dlp contacts YouTube and its media servers. The helper
+does not load browser cookies or upload the downloaded video to another service.
+
+Docs: [SKILL.md](skills/youtube-download/SKILL.md)
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -292,6 +315,7 @@ Docs: [SKILL.md](skills/ga4-blog-report/SKILL.md) ·
 - ga4-blog-report: a GA4 property you administer and a Google Cloud project with the
   Analytics Data API enabled and a service account key
   ([setup](skills/ga4-blog-report/references/setup.md)).
+- youtube-download: FFmpeg with ffprobe, plus Deno or Node for YouTube extraction.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 

@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Sean Lee가 만든 에이전트 스킬 모음입니다. 한글 문서 변환, 한국 특허·상표 검색, Google 포토
-정리, 이메일 초안 작성, GA4 블로그 리포트를 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
+정리, 이메일 초안 작성, GA4 블로그 리포트, YouTube 다운로드를 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
 묶여 있고, 그 밖의 에이전트에는 `npx skills`로 설치할 수 있습니다.
 
 ## 설치
@@ -92,6 +92,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [kipris-search](skills/kipris-search/SKILL.md) | KIPRIS에서 한국 특허·실용신안·상표·디자인 검색 | 없음 (KIPRISPlus 키는 선택) | KIPRIS |
 | [email-draft](skills/email-draft/SKILL.md) | 고객·파트너 이메일을 일관된 비즈니스 문체로 작성하고, Gmail에 그대로 붙여 넣을 수 있는 서식 있는 텍스트로 클립보드에 복사 | macOS | 사용 안 함 |
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
+| [youtube-download](skills/youtube-download/SKILL.md) | YouTube 영상이나 쇼츠를 H.264/AAC MP4로 로컬에 저장 | FFmpeg와 Deno 또는 Node | YouTube |
 
 ### hwp-parser
 
@@ -273,6 +274,27 @@ GA4 Data API로 조회합니다. 글별 조회수와 세션, 상위 유입 경�
 [설정](skills/ga4-blog-report/references/setup.md) ·
 [오류 코드](skills/ga4-blog-report/references/errors.md) (모두 영어)
 
+### youtube-download
+
+YouTube 링크를 받으면 H.264 영상과 AAC 음성의 MP4로 저장합니다. 일반 영상, 쇼츠,
+Music, embed, youtu.be 링크를 지원합니다. 기본 저장 위치는 `~/Downloads/youtube/`이며,
+영상 ID를 파일명으로 사용하고 출처 정보 JSON도 함께 저장합니다. 호환되는 스트림은
+복사하고 다른 코덱은 FFmpeg로 변환합니다. 기존 파일은 해시와 미디어 검증 후 재사용합니다.
+
+- `이 유튜브 영상 MP4로 받아줘: <YouTube URL>`
+- `이 쇼츠를 ~/Movies에 저장해줘: <YouTube URL>`
+- `이 영상 최대 1080p로 다운로드해줘: <YouTube URL>`
+
+**처음 사용하기 전:** FFmpeg와 지원되는 JavaScript 런타임인 Deno 또는 Node가 필요합니다.
+macOS에서는 `brew install ffmpeg deno`로 설치합니다. `uv`가 고정 버전의 yt-dlp를 받습니다.
+macOS와 Linux에서 사용하며 Windows는 WSL이 필요합니다. 링크마다 영상 전체를 하나씩
+저장하며, 재생목록 확장과 진행 중인 라이브 방송 녹화는 지원하지 않습니다.
+
+**내 컴퓨터 밖으로 나가는 것:** yt-dlp가 YouTube와 미디어 서버에 접속합니다.
+도우미는 브라우저 쿠키를 읽거나 다운로드한 영상을 다른 서비스로 업로드하지 않습니다.
+
+문서: [SKILL.md](skills/youtube-download/SKILL.md) (영어)
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -286,6 +308,7 @@ GA4 Data API로 조회합니다. 글별 조회수와 세션, 상위 유입 경�
 - email-draft: 클립보드 단계에 macOS 필요. `uv`나 Python은 필요 없음.
 - ga4-blog-report: 관리자 권한이 있는 GA4 속성, 그리고 Analytics Data API를 켜고 서비스
   계정 키를 만든 Google Cloud 프로젝트([설정](skills/ga4-blog-report/references/setup.md)).
+- youtube-download: ffprobe를 포함한 FFmpeg, 그리고 YouTube 추출에 필요한 Deno 또는 Node.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 

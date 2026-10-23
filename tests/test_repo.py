@@ -39,7 +39,8 @@ def _pep723(path):
 
 @pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py'),
                                           ('kipris-search', 'kipris_api.py'),
-                                          ('ga4-blog-report', 'ga4_report.py')])
+                                          ('ga4-blog-report', 'ga4_report.py'),
+                                          ('youtube-download', 'download_video.py')])
 def test_pep723_pins_match_requirements(skill, script):
     scripts = ROOT / 'skills' / skill / 'scripts'
     meta = _pep723(scripts / script)
@@ -53,11 +54,13 @@ SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
 SKILL_IDS = [skill.name for skill in SKILLS]
 KEYWORDS = {'email-draft': ['email', 'Gmail', 'rich text'],
             'ga4-blog-report': ['GA4', 'Google Analytics', 'AI'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
-            'kipris-search': ['KIPRIS', 'patent', 'trademark']}
+            'kipris-search': ['KIPRIS', 'patent', 'trademark'],
+            'youtube-download': ['YouTube', 'MP4', 'download']}
 
 
 def test_skill_set():
-    assert SKILL_IDS == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search']
+    assert SKILL_IDS == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search',
+                         'youtube-download']
 
 
 def _frontmatter(path):
@@ -144,7 +147,7 @@ def test_hermes_register():
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
     assert [name for name, _, _ in ctx.calls] == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser',
-                                                'kipris-search']
+                                                'kipris-search', 'youtube-download']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name
         assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()
@@ -298,6 +301,9 @@ def _denied(text):
     """
     import hashlib
     import re
+    # The public yt-dlp dependency contains a token otherwise blocked by this check.
+    for package in ('yt-dlp', 'yt_dlp'):
+        text = re.sub(rf'(?<![a-z0-9_]){re.escape(package)}(?![a-z0-9_])', '', text, flags=re.I)
     candidates = set()
     for token in set(re.findall(r'[a-z0-9_./\\-]+', text.lower())):
         parts = [p for p in re.split(r'[/\\._-]+', token) if p]
@@ -306,6 +312,11 @@ def _denied(text):
         segments = [seg.strip('.') for seg in re.split(r'[/\\]', token)]
         candidates.update(f'{a}/{b}' for a, b in zip(segments, segments[1:]) if a and b)
     return any(hashlib.sha256(c.encode()).hexdigest() in _DENYLIST for c in candidates)
+
+
+def test_public_youtube_dependency_names_are_allowed():
+    assert not _denied('yt-dlp[default]==2026.10.21 yt_dlp https://github.com/yt-dlp/yt-dlp')
+    assert not _denied('yt-dlp를 사용합니다.')
 
 
 def test_no_internal_strings():
