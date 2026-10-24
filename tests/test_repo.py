@@ -52,14 +52,15 @@ def test_pep723_pins_match_requirements(skill, script):
 
 SKILLS = sorted(p.parent for p in ROOT.glob('skills/*/SKILL.md'))
 SKILL_IDS = [skill.name for skill in SKILLS]
-KEYWORDS = {'email-draft': ['email', 'Gmail', 'rich text'],
+KEYWORDS = {'domain-search': ['domain', 'Route 53', 'WHOIS'],
+            'email-draft': ['email', 'Gmail', 'rich text'],
             'ga4-blog-report': ['GA4', 'Google Analytics', 'AI'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
             'kipris-search': ['KIPRIS', 'patent', 'trademark'],
             'youtube-download': ['YouTube', 'MP4', 'download']}
 
 
 def test_skill_set():
-    assert SKILL_IDS == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search',
+    assert SKILL_IDS == ['domain-search', 'email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search',
                          'youtube-download']
 
 
@@ -146,7 +147,7 @@ def test_hermes_register():
     import pathlib
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
-    assert [name for name, _, _ in ctx.calls] == ['email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser',
+    assert [name for name, _, _ in ctx.calls] == ['domain-search', 'email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser',
                                                 'kipris-search', 'youtube-download']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name

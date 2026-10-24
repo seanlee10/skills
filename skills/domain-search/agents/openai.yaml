@@ -1,0 +1,4 @@
+interface:
+  display_name: "Domain Search"
+  short_description: "Find domains with Route 53 and compare registration costs"
+  default_prompt: "Use $domain-search to find available domains for my project and compare registration and renewal prices."

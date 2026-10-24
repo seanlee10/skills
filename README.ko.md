@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Sean Lee가 만든 에이전트 스킬 모음입니다. 한글 문서 변환, 한국 특허·상표 검색, Google 포토
-정리, 이메일 초안 작성, GA4 블로그 리포트, YouTube 다운로드를 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
+정리, 이메일 초안 작성, GA4 블로그 리포트, YouTube 다운로드, 도메인 검색을 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
 묶여 있고, 그 밖의 에이전트에는 `npx skills`로 설치할 수 있습니다.
 
 ## 설치
@@ -93,6 +93,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [email-draft](skills/email-draft/SKILL.md) | 고객·파트너 이메일을 일관된 비즈니스 문체로 작성하고, Gmail에 그대로 붙여 넣을 수 있는 서식 있는 텍스트로 클립보드에 복사 | macOS | 사용 안 함 |
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | YouTube 영상이나 쇼츠를 H.264/AAC MP4로 로컬에 저장 | FFmpeg와 Deno 또는 Node | YouTube |
+| [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
 
 ### hwp-parser
 
@@ -295,6 +296,30 @@ macOS와 Linux에서 사용하며 Windows는 WSL이 필요합니다. 링크마�
 
 문서: [SKILL.md](skills/youtube-download/SKILL.md) (영어)
 
+### domain-search
+
+기존 AWS CLI 프로필로 Route 53 Domains를 조회합니다. 도메인 등록 가능 여부와 대안을
+찾고, 표준 등록·갱신 요금을 비교합니다. TLD 표준 요금과 개별 프리미엄 도메인 가격을
+구분하며, 현재 클라이언트가 조회할 수 없는 개별 가격은 미확인으로 표시합니다.
+GoDaddy는 다른 등록기관과의 비교에, RDAP·WHOIS는 기존 등록 정보 확인에 사용합니다.
+조회 결과가 없다는 이유만으로 등록 가능하다고 판단하지 않습니다.
+
+- `한국어 학습 앱에 쓸 짧은 .com이나 .io 도메인을 찾아줘.`
+- `이 도메인들의 Route 53 등록 가능 여부와 첫해·갱신 요금을 비교해줘: <domains>`
+- `이 도메인 등록 정보와 만료일을 RDAP이나 WHOIS로 확인해줘: <domain>`
+
+**처음 사용하기 전:** 조회 권한이 있는 AWS CLI 프로필로 직접 로그인합니다.
+추가 SDK나 별도 자격 증명 저장소는 필요하지 않으며, 키를 채팅에 입력하지 않습니다.
+GoDaddy API를 비교하려면 별도의 읽기 전용 PAT를 로컬에 설정합니다.
+GoDaddy 연동은 현재 문서를 기준으로 정리했으며 실제 계정 검증은 하지 않았습니다.
+
+**내 컴퓨터 밖으로 나가는 것:** 도메인 후보가 AWS와 사용한 비교·등록 정보 서비스에
+전달됩니다. 검색만 수행하며 도메인 구매, 호스팅 영역 생성, DNS나 계정 설정 변경은 하지 않습니다.
+
+문서: [SKILL.md](skills/domain-search/SKILL.md) ·
+[AWS 설정과 가격 조회 제한](skills/domain-search/references/route53.md) ·
+[GoDaddy·RDAP·WHOIS](skills/domain-search/references/providers.md) (모두 영어)
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -309,6 +334,8 @@ macOS와 Linux에서 사용하며 Windows는 WSL이 필요합니다. 링크마�
 - ga4-blog-report: 관리자 권한이 있는 GA4 속성, 그리고 Analytics Data API를 켜고 서비스
   계정 키를 만든 Google Cloud 프로젝트([설정](skills/ga4-blog-report/references/setup.md)).
 - youtube-download: ffprobe를 포함한 FFmpeg, 그리고 YouTube 추출에 필요한 Deno 또는 Node.
+- domain-search: Route 53 Domains 조회 권한이 있는 AWS CLI 프로필.
+  GoDaddy 비교용 PAT나 기존 WHOIS 조회용 `whois`는 선택 사항.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 

@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos, email drafts, GA4
-blog reports and YouTube downloads, packaged
+blog reports, YouTube downloads and domain searches, packaged
 as one plugin (`seanlee10-skills`) for Claude Code, Codex, Devin and Hermes, and installable
 into other agents with `npx skills`.
 
@@ -94,6 +94,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [email-draft](skills/email-draft/SKILL.md) | Drafts customer and partner emails in a consistent business style and copies them to the clipboard as Gmail-ready rich text. | macOS | None |
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | Saves a YouTube video or Short as a local H.264/AAC MP4. | FFmpeg and Deno or Node | YouTube |
+| [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
 
 ### hwp-parser
 
@@ -301,6 +302,32 @@ does not load browser cookies or upload the downloaded video to another service.
 
 Docs: [SKILL.md](skills/youtube-download/SKILL.md)
 
+### domain-search
+
+Finds domain names with Route 53 Domains using the existing AWS CLI profile. Checks
+availability, suggests alternatives, and compares standard registration and renewal
+prices. It distinguishes standard TLD rates from domain-specific premium pricing and
+reports a price as unverified when the installed client cannot retrieve it.
+GoDaddy is an optional registrar comparison; RDAP or WHOIS supplies existing registration
+details. Missing lookup data never becomes a claim that a domain is available.
+
+- `Find a short .com or .io domain for my Korean language-learning app.`
+- `Check these domains in Route 53 and compare first-year and renewal costs: <domains>`
+- `이 도메인 등록 정보와 만료일을 RDAP이나 WHOIS로 확인해줘: <domain>`
+
+**Before first use:** authenticate your own AWS CLI profile with the required read
+permissions. No extra SDK, custom credential store, or API key in chat is needed.
+For a GoDaddy API comparison, configure a separate scoped PAT locally. Its integration
+is based on current documentation and has not been account-tested.
+
+**What leaves your machine:** candidate names go to AWS and any comparison or lookup
+provider used. The skill searches only; it does not buy domains, create hosted zones,
+or change DNS records or account settings.
+
+Docs: [SKILL.md](skills/domain-search/SKILL.md) ·
+[AWS setup and pricing limits](skills/domain-search/references/route53.md) ·
+[GoDaddy, RDAP and WHOIS](skills/domain-search/references/providers.md)
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -316,6 +343,8 @@ Docs: [SKILL.md](skills/youtube-download/SKILL.md)
   Analytics Data API enabled and a service account key
   ([setup](skills/ga4-blog-report/references/setup.md)).
 - youtube-download: FFmpeg with ffprobe, plus Deno or Node for YouTube extraction.
+- domain-search: an authenticated AWS CLI profile with Route 53 Domains read permissions;
+  optional GoDaddy PAT for registrar comparisons, or `whois` for legacy lookups.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 
