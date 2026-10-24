@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Agent skills by Sean Lee for Korean documents, Korean IP search, Google Photos, email drafts, GA4
-blog reports, YouTube downloads and domain searches, packaged
+blog reports, YouTube downloads, domain searches and Naver-based topic planning, packaged
 as one plugin (`seanlee10-skills`) for Claude Code, Codex, Devin and Hermes, and installable
 into other agents with `npx skills`.
 
@@ -95,6 +95,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | Saves a YouTube video or Short as a local H.264/AAC MP4. | FFmpeg and Deno or Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
+| [naver-research](skills/naver-research/SKILL.md) | Compares blog ideas with Naver search trends and shopping clicks, then proposes priorities and publication dates. | Naver MCP credentials and Google Sheets access | Naver and Google |
 
 ### hwp-parser
 
@@ -328,6 +329,31 @@ Docs: [SKILL.md](skills/domain-search/SKILL.md) ·
 [AWS setup and pricing limits](skills/domain-search/references/route53.md) ·
 [GoDaddy, RDAP and WHOIS](skills/domain-search/references/providers.md)
 
+### naver-research
+
+Reads unpublished ideas from a Google Sheets content plan, groups related keywords, and
+compares relative Naver search interest, recent momentum and seasonal timing. Shopping
+category clicks provide separate supporting evidence. Every search batch includes the
+same anchor group so independently scaled responses can be compared. Partial weeks,
+missing data and schedules that cannot meet the target publication window are flagged.
+
+- `Use Naver DataLab to prioritize the ideas in my plan sheet.`
+- `다음에 뭐 쓰지? 데이터랩으로 관심도와 시즌을 비교하고 발행일을 제안해줘.`
+
+**Before first use:** connect the external MIT-licensed
+[naver-search-mcp](https://github.com/isnow890/naver-search-mcp), provide credentials in
+its server environment, and connect Google Sheets. New credentials come from NAVER API
+HUB. Keep the spreadsheet ID and blog URL in a local profile, outside the public skill.
+
+**What leaves your machine:** keyword groups and filters go to Naver; plan rows are read
+through Google Sheets. A recommendation is read-only. Only after approval does the skill
+update the selected dates, status and content type. DataLab reports relative interest,
+not absolute search counts or AI citation performance.
+
+Docs: [SKILL.md](skills/naver-research/SKILL.md) ·
+[setup](skills/naver-research/references/setup.md) ·
+[comparison and scheduling rules](skills/naver-research/references/methodology.md).
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -345,6 +371,8 @@ Docs: [SKILL.md](skills/domain-search/SKILL.md) ·
 - youtube-download: FFmpeg with ffprobe, plus Deno or Node for YouTube extraction.
 - domain-search: an authenticated AWS CLI profile with Route 53 Domains read permissions;
   optional GoDaddy PAT for registrar comparisons, or `whois` for legacy lookups.
+- naver-research: connected Naver MCP with search-trend and shopping-insight access, plus
+  Google Sheets access. Node.js and npx run the external MCP server.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 

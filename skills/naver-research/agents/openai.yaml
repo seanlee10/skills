@@ -1,0 +1,4 @@
+interface:
+  display_name: "Naver Research"
+  short_description: "Rank blog ideas with Naver trends and seasonal timing"
+  default_prompt: "Use $naver-research to compare my blog topic ideas and propose measurement and publication dates without editing the sheet."

@@ -1,6 +1,6 @@
 {
   "name": "seanlee10",
-  "description": "Agent skills by Sean Lee: hwp-parser converts HWP/HWPX documents to Markdown; google-photo collects and curates photos and videos from Google Photos via the Picker API; kipris-search searches KIPRIS for Korean patents, utility models, trademarks and designs; email-draft drafts customer emails and copies them to the clipboard as Gmail-ready rich text; ga4-blog-report reports a blog's GA4 traffic per post, per source and from AI engines; youtube-download saves a YouTube video as a local H.264/AAC MP4; domain-search checks domain availability and costs with Route 53 and optional GoDaddy or RDAP/WHOIS lookups.",
+  "description": "Agent skills by Sean Lee: hwp-parser converts HWP/HWPX documents to Markdown; google-photo collects and curates photos and videos from Google Photos via the Picker API; kipris-search searches KIPRIS for Korean patents, utility models, trademarks and designs; email-draft drafts customer emails and copies them to the clipboard as Gmail-ready rich text; ga4-blog-report reports a blog's GA4 traffic per post, per source and from AI engines; youtube-download saves a YouTube video as a local H.264/AAC MP4; domain-search checks domain availability and costs with Route 53 and optional GoDaddy or RDAP/WHOIS lookups; naver-research prioritizes blog ideas using Naver search trends, shopping insights and seasonal timing.",
   "owner": {
     "name": "Sean Lee"
   },
@@ -8,7 +8,7 @@
     {
       "name": "seanlee10-skills",
       "source": "./",
-      "description": "Agent skills by Sean Lee, including hwp-parser (HWP/HWPX to Markdown), google-photo (collect and curate Google Photos via the Picker API), kipris-search (search KIPRIS for Korean patents, trademarks and designs), email-draft (customer emails as Gmail-ready rich text) and ga4-blog-report (GA4 blog traffic per post, source and AI engine); youtube-download saves a YouTube video as a local H.264/AAC MP4; domain-search checks domain availability and costs with Route 53 and optional GoDaddy or RDAP/WHOIS lookups."
+      "description": "Agent skills by Sean Lee, including hwp-parser (HWP/HWPX to Markdown), google-photo (collect and curate Google Photos via the Picker API), kipris-search (search KIPRIS for Korean patents, trademarks and designs), email-draft (customer emails as Gmail-ready rich text) and ga4-blog-report (GA4 blog traffic per post, source and AI engine); youtube-download saves a YouTube video as a local H.264/AAC MP4; domain-search checks domain availability and costs with Route 53 and optional GoDaddy or RDAP/WHOIS lookups; naver-research prioritizes blog ideas using Naver search trends, shopping insights and seasonal timing."
     }
   ]
 }

@@ -3,7 +3,7 @@
 # seanlee10/skills
 
 Sean Lee가 만든 에이전트 스킬 모음입니다. 한글 문서 변환, 한국 특허·상표 검색, Google 포토
-정리, 이메일 초안 작성, GA4 블로그 리포트, YouTube 다운로드, 도메인 검색을 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
+정리, 이메일 초안 작성, GA4 블로그 리포트, YouTube 다운로드, 도메인 검색, 네이버 기반 주제 선정을 다룹니다. Claude Code, Codex, Devin, Hermes용 플러그인 하나(`seanlee10-skills`)로
 묶여 있고, 그 밖의 에이전트에는 `npx skills`로 설치할 수 있습니다.
 
 ## 설치
@@ -94,6 +94,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | YouTube 영상이나 쇼츠를 H.264/AAC MP4로 로컬에 저장 | FFmpeg와 Deno 또는 Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
+| [naver-research](skills/naver-research/SKILL.md) | 네이버 검색어트렌드·쇼핑 클릭 추이로 블로그 주제를 비교하고 우선순위와 발행일을 제안 | 네이버 MCP 인증과 Google Sheets 접근 | 네이버와 Google |
 
 ### hwp-parser
 
@@ -320,6 +321,29 @@ GoDaddy 연동은 현재 문서를 기준으로 정리했으며 실제 계정 �
 [AWS 설정과 가격 조회 제한](skills/domain-search/references/route53.md) ·
 [GoDaddy·RDAP·WHOIS](skills/domain-search/references/providers.md) (모두 영어)
 
+### naver-research
+
+Google Sheets의 미발행 블로그 아이디어를 읽고 관련 검색어를 묶어 네이버 검색 관심도,
+최근 상승세와 시즌 타이밍을 비교합니다. 쇼핑 분야별 클릭 추이는 별도 근거로 보강합니다.
+모든 검색 배치에 같은 기준 묶음을 넣어 상대값을 비교하고, 불완전한 주·누락 데이터·
+목표 시점에 맞출 수 없는 일정은 구분해 표시합니다.
+
+- `다음에 뭐 쓰지? 데이터랩으로 관심도와 시즌을 비교하고 발행일을 제안해줘.`
+- `plan 시트의 아이디어 중 지금 측정을 시작할 주제를 골라줘. 시트는 수정하지 마.`
+
+**처음 사용하기 전:** MIT 라이선스의 외부
+[naver-search-mcp](https://github.com/isnow890/naver-search-mcp)를 연결하고 서버 환경에
+인증 정보를 설정합니다. 신규 키는 NAVER API HUB에서 발급합니다. Google Sheets도
+연결해야 합니다. 개인 시트 ID와 블로그 주소는 공개 스킬 밖의 로컬 설정에 보관합니다.
+
+**내 컴퓨터 밖으로 나가는 것:** 키워드 묶음과 필터가 네이버에 전달되고, Google Sheets로
+계획 행을 읽습니다. 제안 단계는 읽기 전용입니다. 사용자 승인 후에만 선택한 행의 날짜·
+상태·유형을 수정합니다. 데이터랩은 상대 관심도이며 절대 검색량이나 AI 인용 성과가 아닙니다.
+
+문서: [SKILL.md](skills/naver-research/SKILL.md) ·
+[설정](skills/naver-research/references/setup.md) ·
+[비교·일정 계산](skills/naver-research/references/methodology.md).
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -336,6 +360,8 @@ GoDaddy 연동은 현재 문서를 기준으로 정리했으며 실제 계정 �
 - youtube-download: ffprobe를 포함한 FFmpeg, 그리고 YouTube 추출에 필요한 Deno 또는 Node.
 - domain-search: Route 53 Domains 조회 권한이 있는 AWS CLI 프로필.
   GoDaddy 비교용 PAT나 기존 WHOIS 조회용 `whois`는 선택 사항.
+- naver-research: 검색어트렌드·쇼핑인사이트 권한을 가진 네이버 MCP와 Google Sheets 접근.
+  외부 MCP 서버 실행에는 Node.js와 npx가 필요합니다.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 
