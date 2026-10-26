@@ -97,6 +97,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
 | [naver-post](skills/naver-post/SKILL.md) | Prepares an aeobot blog article as a Naver blog body on the clipboard, with a new intro and tracked link, for you to paste and publish. | macOS and `uv` | aeobot.ai |
 | [naver-research](skills/naver-research/SKILL.md) | Compares blog ideas with Naver search trends and shopping clicks, then proposes priorities and publication dates. | Naver MCP credentials and Google Sheets access | Naver and Google |
+| [pexels-search](skills/pexels-search/SKILL.md) | Searches Pexels for free stock videos and photos and downloads the chosen file with attribution metadata. | A free Pexels API key | Pexels |
 
 ### hwp-parser
 
@@ -373,6 +374,26 @@ Docs: [SKILL.md](skills/naver-research/SKILL.md) ·
 [setup](skills/naver-research/references/setup.md) ·
 [comparison and scheduling rules](skills/naver-research/references/methodology.md).
 
+### pexels-search
+
+Searches Pexels for stock videos or photos, for example B-roll for a vertical short. Search
+defaults to portrait videos and returns JSON metadata (size, duration, preview image, author)
+so an agent can choose clips before downloading. A download saves the smallest MP4 that meets
+the minimum resolution (720×1280 by default) to `~/Downloads/pexels/`, with a source JSON that
+records the author and license. Matching existing files are reused after a hash check.
+
+- `Find three portrait B-roll clips of a rainy city street at night, at least 8 seconds`
+- `펙셀스에서 커피 내리는 세로 영상 찾아서 받아줘`
+- `Download Pexels photo 1234567 to ~/Pictures/stock`
+
+**Before first use:** create a free API key at https://www.pexels.com/api/ and export it as
+`PEXELS_API_KEY`. The helper uses only the Python standard library.
+
+**What leaves your machine:** search text and item IDs go to the Pexels API with your key;
+media is downloaded from Pexels hosts only. Nothing is uploaded.
+
+Docs: [SKILL.md](skills/pexels-search/SKILL.md)
+
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` or
@@ -393,6 +414,7 @@ Docs: [SKILL.md](skills/naver-research/SKILL.md) ·
 - naver-post: macOS for the clipboard step.
 - naver-research: connected Naver MCP with search-trend and shopping-insight access, plus
   Google Sheets access. Node.js and npx run the external MCP server.
+- pexels-search: a free Pexels API key in `PEXELS_API_KEY`.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 

@@ -96,6 +96,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
 | [naver-post](skills/naver-post/SKILL.md) | aeobot 블로그 글을 새 도입부와 추적 링크를 넣은 네이버 블로그 본문으로 만들어 클립보드에 복사. 붙여 넣기와 발행은 직접 수행 | macOS와 `uv` | aeobot.ai |
 | [naver-research](skills/naver-research/SKILL.md) | 네이버 검색어트렌드·쇼핑 클릭 추이로 블로그 주제를 비교하고 우선순위와 발행일을 제안 | 네이버 MCP 인증과 Google Sheets 접근 | 네이버와 Google |
+| [pexels-search](skills/pexels-search/SKILL.md) | Pexels에서 무료 스톡 영상과 사진을 검색하고 고른 파일을 출처 정보와 함께 저장 | 무료 Pexels API 키 | Pexels |
 
 ### hwp-parser
 
@@ -363,6 +364,26 @@ Google Sheets의 미발행 블로그 아이디어를 읽고 관련 검색어를 
 [설정](skills/naver-research/references/setup.md) ·
 [비교·일정 계산](skills/naver-research/references/methodology.md).
 
+### pexels-search
+
+Pexels에서 스톡 영상이나 사진을 검색합니다. 세로 쇼츠의 B-roll 같은 용도입니다. 기본값은
+세로 영상이며, 크기·길이·미리보기 이미지·작가 같은 메타데이터를 JSON으로 돌려주므로 에이전트가
+다운로드 전에 클립을 고를 수 있습니다. 다운로드는 최소 해상도(기본 720×1280)를 만족하는 가장
+작은 MP4를 `~/Downloads/pexels/`에 저장하고, 작가와 라이선스를 담은 출처 JSON을 함께 남깁니다.
+같은 파일이 이미 있으면 해시 확인 후 재사용합니다.
+
+- `비 오는 밤거리 세로 B-roll 8초 이상짜리 세 개 찾아줘`
+- `펙셀스에서 커피 내리는 세로 영상 찾아서 받아줘`
+- `Pexels 사진 1234567을 ~/Pictures/stock에 저장해줘`
+
+**처음 사용하기 전:** https://www.pexels.com/api/ 에서 무료 API 키를 만들고 `PEXELS_API_KEY`로
+export 합니다. 도우미는 Python 표준 라이브러리만 사용합니다.
+
+**내 컴퓨터 밖으로 나가는 것:** 검색어와 항목 ID가 API 키와 함께 Pexels API로 전송되고, 미디어는
+Pexels 서버에서만 받습니다. 업로드하는 것은 없습니다.
+
+문서: [SKILL.md](skills/pexels-search/SKILL.md) (영어)
+
 ## 요구 사항
 
 - [`uv`](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh` 또는
@@ -382,6 +403,7 @@ Google Sheets의 미발행 블로그 아이디어를 읽고 관련 검색어를 
 - naver-post: 클립보드 단계에 macOS 필요.
 - naver-research: 검색어트렌드·쇼핑인사이트 권한을 가진 네이버 MCP와 Google Sheets 접근.
   외부 MCP 서버 실행에는 Node.js와 npx가 필요합니다.
+- pexels-search: `PEXELS_API_KEY`에 넣은 무료 Pexels API 키.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 

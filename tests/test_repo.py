@@ -40,6 +40,7 @@ def _pep723(path):
 @pytest.mark.parametrize('skill,script', [('hwp-parser', 'hwp2md.py'), ('google-photo', 'gphoto.py'),
                                           ('kipris-search', 'kipris_api.py'),
                                           ('naver-post', 'naver.py'),
+                                          ('pexels-search', 'pexels.py'),
                                           ('ga4-blog-report', 'ga4_report.py'),
                                           ('youtube-download', 'download_video.py')])
 def test_pep723_pins_match_requirements(skill, script):
@@ -59,12 +60,13 @@ KEYWORDS = {'domain-search': ['domain', 'Route 53', 'WHOIS'],
             'kipris-search': ['KIPRIS', 'patent', 'trademark'],
             'naver-post': ['네이버', 'Naver', 'aeobot'],
             'naver-research': ['네이버', '데이터랩', '발행'],
+            'pexels-search': ['Pexels', 'B-roll', 'download'],
             'youtube-download': ['YouTube', 'MP4', 'download']}
 
 
 def test_skill_set():
     assert SKILL_IDS == ['domain-search', 'email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser', 'kipris-search',
-                         'naver-post', 'naver-research', 'youtube-download']
+                         'naver-post', 'naver-research', 'pexels-search', 'youtube-download']
 
 
 def _frontmatter(path):
@@ -151,7 +153,8 @@ def test_hermes_register():
     ctx = _FakeCtx()
     _load_hermes_plugin().register(ctx)
     assert [name for name, _, _ in ctx.calls] == ['domain-search', 'email-draft', 'ga4-blog-report', 'google-photo', 'hwp-parser',
-                                                'kipris-search', 'naver-post', 'naver-research', 'youtube-download']
+                                                'kipris-search', 'naver-post', 'naver-research', 'pexels-search',
+                                                'youtube-download']
     for (name, path, description), skill in zip(ctx.calls, SKILLS):
         assert name == skill.name
         assert isinstance(path, pathlib.Path) and path == skill / 'SKILL.md' and path.is_file()

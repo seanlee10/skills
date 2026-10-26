@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pexels Search"
+  short_description: "Search and download free Pexels stock videos and photos"
+  default_prompt: "Use $pexels-search to find portrait B-roll for this scene."
