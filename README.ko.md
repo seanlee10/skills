@@ -94,6 +94,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | YouTube 영상이나 쇼츠를 H.264/AAC MP4로 로컬에 저장 | FFmpeg와 Deno 또는 Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
+| [naver-post](skills/naver-post/SKILL.md) | aeobot 블로그 글을 새 도입부와 추적 링크를 넣은 네이버 블로그 본문으로 만들어 클립보드에 복사. 붙여 넣기와 발행은 직접 수행 | macOS와 `uv` | aeobot.ai |
 | [naver-research](skills/naver-research/SKILL.md) | 네이버 검색어트렌드·쇼핑 클릭 추이로 블로그 주제를 비교하고 우선순위와 발행일을 제안 | 네이버 MCP 인증과 Google Sheets 접근 | 네이버와 Google |
 
 ### hwp-parser
@@ -321,6 +322,24 @@ GoDaddy 연동은 현재 문서를 기준으로 정리했으며 실제 계정 �
 [AWS 설정과 가격 조회 제한](skills/domain-search/references/route53.md) ·
 [GoDaddy·RDAP·WHOIS](skills/domain-search/references/providers.md) (모두 영어)
 
+### naver-post
+
+aeobot 블로그 글 하나를 네이버 블로그용으로 준비합니다. 네이버에는 글쓰기 API가 없어서,
+에이전트가 2~3문장 도입부를 새로 쓰고 `utm_source=naver` 링크를 넣은 본문을 서식 있는
+텍스트로 클립보드에 복사하며 커버 이미지를 내려받습니다. 커버 업로드, 본문 붙여 넣기,
+발행은 직접 하고, 에이전트가 게시된 페이지를 확인합니다. 대량 게시를 피하기 위해 전체 글을
+요청해도 하루 한 편만 처리합니다.
+
+- `이 글 네이버에 올려줘: https://aeobot.ai/blog/SLUG/`
+- `다음에 네이버로 옮길 글 준비해줘`
+
+**처음 사용하기 전:** 준비할 것 없음. 클립보드 단계는 `osascript`를 쓰므로 macOS 전용입니다.
+
+**내 컴퓨터 밖으로 나가는 것:** 스크립트는 aeobot.ai에서 글과 커버를 내려받기만 합니다.
+클립보드 본문과 커버는 `~/.config/naver-post/`에 남습니다.
+
+문서: [SKILL.md](skills/naver-post/SKILL.md) (영어)
+
 ### naver-research
 
 Google Sheets의 미발행 블로그 아이디어를 읽고 관련 검색어를 묶어 네이버 검색 관심도,
@@ -360,6 +379,7 @@ Google Sheets의 미발행 블로그 아이디어를 읽고 관련 검색어를 
 - youtube-download: ffprobe를 포함한 FFmpeg, 그리고 YouTube 추출에 필요한 Deno 또는 Node.
 - domain-search: Route 53 Domains 조회 권한이 있는 AWS CLI 프로필.
   GoDaddy 비교용 PAT나 기존 WHOIS 조회용 `whois`는 선택 사항.
+- naver-post: 클립보드 단계에 macOS 필요.
 - naver-research: 검색어트렌드·쇼핑인사이트 권한을 가진 네이버 MCP와 Google Sheets 접근.
   외부 MCP 서버 실행에는 Node.js와 npx가 필요합니다.
 

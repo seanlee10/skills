@@ -95,6 +95,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | Saves a YouTube video or Short as a local H.264/AAC MP4. | FFmpeg and Deno or Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
+| [naver-post](skills/naver-post/SKILL.md) | Prepares an aeobot blog article as a Naver blog body on the clipboard, with a new intro and tracked link, for you to paste and publish. | macOS and `uv` | aeobot.ai |
 | [naver-research](skills/naver-research/SKILL.md) | Compares blog ideas with Naver search trends and shopping clicks, then proposes priorities and publication dates. | Naver MCP credentials and Google Sheets access | Naver and Google |
 
 ### hwp-parser
@@ -329,6 +330,24 @@ Docs: [SKILL.md](skills/domain-search/SKILL.md) ·
 [AWS setup and pricing limits](skills/domain-search/references/route53.md) ·
 [GoDaddy, RDAP and WHOIS](skills/domain-search/references/providers.md)
 
+### naver-post
+
+Prepares one aeobot blog article for the Naver blog. Naver has no posting API, so the agent
+writes a new 2 to 3 sentence intro, builds a styled body with a `utm_source=naver` link, puts
+it on the clipboard as rich text and downloads the cover image. You upload the cover, paste
+the body and press 발행 yourself; the agent then checks the published page. To avoid posting
+in bulk, a request for all articles still means one article a day.
+
+- `이 글 네이버에 올려줘: https://aeobot.ai/blog/SLUG/`
+- `Cross-post https://aeobot.ai/blog/SLUG/ to the Naver blog.`
+
+**Before first use:** nothing; macOS only (the clipboard step uses `osascript`).
+
+**What leaves your machine:** the script only downloads the article and its cover from
+aeobot.ai. The clipboard body and cover stay in `~/.config/naver-post/`.
+
+Docs: [SKILL.md](skills/naver-post/SKILL.md)
+
 ### naver-research
 
 Reads unpublished ideas from a Google Sheets content plan, groups related keywords, and
@@ -371,6 +390,7 @@ Docs: [SKILL.md](skills/naver-research/SKILL.md) ·
 - youtube-download: FFmpeg with ffprobe, plus Deno or Node for YouTube extraction.
 - domain-search: an authenticated AWS CLI profile with Route 53 Domains read permissions;
   optional GoDaddy PAT for registrar comparisons, or `whois` for legacy lookups.
+- naver-post: macOS for the clipboard step.
 - naver-research: connected Naver MCP with search-trend and shopping-insight access, plus
   Google Sheets access. Node.js and npx run the external MCP server.
 

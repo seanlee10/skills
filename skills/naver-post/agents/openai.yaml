@@ -1,0 +1,4 @@
+interface:
+  display_name: "Naver Post"
+  short_description: "Prepare an aeobot article for the Naver blog editor"
+  default_prompt: "Use $naver-post to prepare today's aeobot article for the Naver blog."
