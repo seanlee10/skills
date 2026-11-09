@@ -95,7 +95,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | Reports a blog's Google Analytics 4 traffic per post and per source, including visits from AI assistants such as ChatGPT and Perplexity. | One-time Google Cloud and GA4 setup | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | Saves a YouTube video or Short as a local H.264/AAC MP4. | FFmpeg and Deno or Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
-| [naver-post](skills/naver-post/SKILL.md) | Prepares an aeobot blog article as a Naver blog body on the clipboard, with a new intro and tracked link, for you to paste and publish. | macOS and `uv` | aeobot.ai |
+| [naver-post](skills/naver-post/SKILL.md) | Prepares a blog article with a new intro and tracked link on the clipboard for you to paste and publish on Naver. | macOS and `uv` | Configured source site and cover image host |
 | [naver-research](skills/naver-research/SKILL.md) | Compares blog ideas with Naver search trends and shopping clicks, then proposes priorities and publication dates. | Naver MCP credentials and Google Sheets access | Naver and Google |
 | [pexels-search](skills/pexels-search/SKILL.md) | Searches Pexels for free stock videos and photos and downloads the chosen file with attribution metadata. | A free Pexels API key | Pexels |
 
@@ -333,21 +333,16 @@ Docs: [SKILL.md](skills/domain-search/SKILL.md) ·
 
 ### naver-post
 
-Prepares one aeobot blog article for the Naver blog. Naver has no posting API, so the agent
-writes a new 2 to 3 sentence intro, builds a styled body with a `utm_source=naver` link, puts
-it on the clipboard as rich text and downloads the cover image. You upload the cover, paste
-the body and press 발행 yourself; the agent then checks the published page. To avoid posting
-in bulk, a request for all articles still means one article a day.
+Prepare a public HTML article for your Naver Blog. The agent rewrites the opening, adds a tracked source link and copies the styled body to the clipboard. You upload the cover if available, paste the body and publish in the Naver editor.
 
-- `이 글 네이버에 올려줘: https://aeobot.ai/blog/SLUG/`
-- `Cross-post https://aeobot.ai/blog/SLUG/ to the Naver blog.`
+**Before first use** set `source_url` and your Naver `blog_id` in `~/.config/naver-post/config.toml`. You can also set the publication history path and a CSS selector for the article body. Copying to the clipboard requires macOS and `uv`.
 
-**Before first use:** nothing; macOS only (the clipboard step uses `osascript`).
+- `Prepare https://example.org/articles/first-post/ for my Naver Blog.`
+- `Find the next article from my blog that I haven't posted to Naver.`
 
-**What leaves your machine:** the script only downloads the article and its cover from
-aeobot.ai. The clipboard body and cover stay in `~/.config/naver-post/`.
+The skill downloads the source article and cover and checks the Naver post when you share its URL. Drafts, cover files and the SQLite publication history stay on your computer.
 
-Docs: [SKILL.md](skills/naver-post/SKILL.md)
+See [SKILL.md](skills/naver-post/SKILL.md) for the configuration example and commands.
 
 ### naver-research
 

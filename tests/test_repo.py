@@ -58,7 +58,7 @@ KEYWORDS = {'domain-search': ['domain', 'Route 53', 'WHOIS'],
             'email-draft': ['email', 'Gmail', 'rich text'],
             'ga4-blog-report': ['GA4', 'Google Analytics', 'AI'], 'hwp-parser': ['HWP', 'HWPX', 'Markdown'], 'google-photo': ['Google Photos', 'Picker'],
             'kipris-search': ['KIPRIS', 'patent', 'trademark'],
-            'naver-post': ['네이버', 'Naver', 'aeobot'],
+            'naver-post': ['네이버', 'Naver', 'blog'],
             'naver-research': ['네이버', '데이터랩', '발행'],
             'pexels-search': ['Pexels', 'B-roll', 'download'],
             'youtube-download': ['YouTube', 'MP4', 'download']}

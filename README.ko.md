@@ -94,7 +94,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [ga4-blog-report](skills/ga4-blog-report/SKILL.md) | 블로그의 Google 애널리틱스 4 유입을 글별·경로별로 정리하고, ChatGPT·퍼플렉시티 같은 AI 서비스에서 온 방문도 집계 | Google Cloud와 GA4 1회 설정 | Google |
 | [youtube-download](skills/youtube-download/SKILL.md) | YouTube 영상이나 쇼츠를 H.264/AAC MP4로 로컬에 저장 | FFmpeg와 Deno 또는 Node | YouTube |
 | [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
-| [naver-post](skills/naver-post/SKILL.md) | aeobot 블로그 글을 새 도입부와 추적 링크를 넣은 네이버 블로그 본문으로 만들어 클립보드에 복사. 붙여 넣기와 발행은 직접 수행 | macOS와 `uv` | aeobot.ai |
+| [naver-post](skills/naver-post/SKILL.md) | 블로그 글에 새 도입부와 유입 추적 링크를 넣어 네이버용 본문을 클립보드에 복사합니다. 붙여 넣기와 발행은 직접 합니다. | macOS와 `uv` | 설정한 원본 사이트와 커버 이미지 호스트 |
 | [naver-research](skills/naver-research/SKILL.md) | 네이버 검색어트렌드·쇼핑 클릭 추이로 블로그 주제를 비교하고 우선순위와 발행일을 제안 | 네이버 MCP 인증과 Google Sheets 접근 | 네이버와 Google |
 | [pexels-search](skills/pexels-search/SKILL.md) | Pexels에서 무료 스톡 영상과 사진을 검색하고 고른 파일을 출처 정보와 함께 저장 | 무료 Pexels API 키 | Pexels |
 
@@ -325,21 +325,16 @@ GoDaddy 연동은 현재 문서를 기준으로 정리했으며 실제 계정 �
 
 ### naver-post
 
-aeobot 블로그 글 하나를 네이버 블로그용으로 준비합니다. 네이버에는 글쓰기 API가 없어서,
-에이전트가 2~3문장 도입부를 새로 쓰고 `utm_source=naver` 링크를 넣은 본문을 서식 있는
-텍스트로 클립보드에 복사하며 커버 이미지를 내려받습니다. 커버 업로드, 본문 붙여 넣기,
-발행은 직접 하고, 에이전트가 게시된 페이지를 확인합니다. 대량 게시를 피하기 위해 전체 글을
-요청해도 하루 한 편만 처리합니다.
+공개 HTML 블로그 글을 내 네이버 블로그로 옮길 때 사용합니다. 에이전트가 도입부를 새로 쓰고 유입 추적 링크가 포함된 본문을 서식 있는 텍스트로 클립보드에 복사합니다. 편집기에서 커버 이미지를 올리고 본문을 붙여 넣은 뒤 직접 발행합니다.
 
-- `이 글 네이버에 올려줘: https://aeobot.ai/blog/SLUG/`
-- `다음에 네이버로 옮길 글 준비해줘`
+**처음 사용하기 전** `~/.config/naver-post/config.toml`에 원본 블로그 주소(`source_url`)와 네이버 블로그 ID(`blog_id`)를 지정합니다. 발행 기록 경로(`history_path`)와 본문 CSS 선택자(`article_selector`)도 지정할 수 있습니다. 클립보드 복사에는 macOS와 `uv`가 필요합니다.
 
-**처음 사용하기 전:** 준비할 것 없음. 클립보드 단계는 `osascript`를 쓰므로 macOS 전용입니다.
+- `https://example.org/articles/first-post/ 글을 내 네이버 블로그용으로 준비해줘.`
+- `내 블로그에서 아직 네이버에 옮기지 않은 다음 글을 준비해줘.`
 
-**내 컴퓨터 밖으로 나가는 것:** 스크립트는 aeobot.ai에서 글과 커버를 내려받기만 합니다.
-클립보드 본문과 커버는 `~/.config/naver-post/`에 남습니다.
+원본 글과 커버를 내려받고, 발행 후 전달받은 네이버 게시글을 확인합니다. 초안과 커버는 내 컴퓨터에 저장되며 발행 기록은 로컬 SQLite 파일에 남습니다.
 
-문서: [SKILL.md](skills/naver-post/SKILL.md) (영어)
+설정 예시와 사용법은 [SKILL.md](skills/naver-post/SKILL.md)에 있습니다.
 
 ### naver-research
 

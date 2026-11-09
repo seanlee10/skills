@@ -1,26 +1,28 @@
 ---
 name: naver-post
-description: Use when the user wants an aeobot blog post (https://aeobot.ai/blog/<slug>/) cross-posted to the 네이버 블로그 (blog.naver.com/aeobot), asks 네이버에 올려줘, or asks for the next article to move to Naver.
+description: Prepare a public HTML blog article for manual publishing to the user's 네이버 블로그 (Naver Blog). Use for requests to move a post to Naver, prepare the next unpublished article, or record its published URL.
 ---
 
-# Naver blog post
+# Naver Blog drafts
 
-Puts one aeobot blog article on the clipboard as a Naver blog body. Naver has no posting API and the user presses 발행 themselves. Claude in Chrome cannot open blog.naver.com (blocked as a safety restriction), so do not try to drive the editor.
+## First use
 
-## Pacing
+Ask for the source blog's base URL and the destination Naver blog ID (the segment after `blog.naver.com/`) if they are unknown. Save the user's values in `~/.config/naver-post/config.toml`. Create the parent directory as needed. For another profile, pass `--config /path/to/profile.toml` before the subcommand.
 
-One article a day. Bulk verbatim posting reads as spam, so a request for "all posts" still means today's one article. Pick the next from `data/ledger.csv` in clone-loop: skip slugs already on `naver-blog`, then take the highest i-boss views.
+```toml
+source_url = "https://example.org/articles/"
+blog_id = "my_blog"
+history_path = "history.sqlite3"
+# article_selector = ".post-content"
+```
 
-## Steps
+`source_url` scopes articles to that origin and path. Use the site's final address after redirects. Set it to the site root for blogs with query-based article URLs. The history is a local SQLite file, created on first use of `next` or `log`. The default is `history.sqlite3` beside the config. Relative paths resolve from the config directory. Point it to a new SQLite file when migrating from a CSV ledger. To carry over earlier posts, run `log` once per known source/published URL pair.
 
-Requires macOS (the clipboard step uses `osascript`) and [`uv`](https://docs.astral.sh/uv/). In Claude Code the skill folder is `${CLAUDE_SKILL_DIR}`.
+## Prepare and publish
 
-1. **Write the intro.** Read the article, then write 2 to 3 new sentences for Naver: only numbers that are in the article, no free-check offer, no guarantee of exposure. It replaces the article's first paragraph.
-2. **Build.** `uv run <this skill's folder>/scripts/naver.py clip <blog-url> --intro "<intro>"`
-   Prints JSON with `title`, `images`, `tables`, `cover`, `link`, `write_url`, `clipboard`.
-3. **Hand over.** Tell the user to open `write_url`, type the printed `title`, upload the printed `cover` file as the first image (a hotlinked cover leaves the post with no 대표 이미지), click below it, press Cmd+V, and press 발행. Give them the title, cover path and image count.
-4. **Verify the posted URL** the user sends. Fetch `https://m.blog.naver.com/aeobot/<post-id>` and check the `images` count, that `og:image` is on pstatic.net and not the default `og_270x270.png`, and that the `utm_source=naver` link is present. Images stay hotlinked to aeobot.ai because the editor drops pasted data URIs, so a rebuilt asset hash on the blog would break them.
-5. **Log it** from the clone-loop repo root:
-   `uv run python -m loop log --channel naver-blog --kind post --url <posted-url> --hook h-<slug>-1 --campaign <slug>`
+Run the following commands with `uv run <skill-folder>/scripts/naver.py`. The rich-text clipboard step requires macOS.
 
-The loop cannot read Naver stats, so the scorecard shows this channel as 측정 안 됨.
+1. Use the requested article URL. If the user asks for the next post, read their candidate list or find article links on the configured blog's public index. Order them by the user's preference or keep the index order. Run `next <article-url> [<article-url> ...]` to find the first unrecorded candidate for this Naver account. If the index has no article links, ask for candidate URLs.
+2. Read the article and write a short opening for Naver readers using facts from the source. Run `clip <article-url> --intro "<new opening>"`. The script reads the page's HTML and looks for a semantic article or main body. If it selects the wrong region, inspect the source HTML and set `article_selector` to a CSS selector matching the article body once. Pages whose text loads only after running JavaScript need a server-rendered article URL.
+3. Give the user the returned title and editor URL. If a cover file is available, have them upload it as the first image and place the cursor below it. Report any cover warning. The user pastes the formatted body with Cmd+V, reviews it, and presses 발행. Inline images link to the source site's assets.
+4. When the user supplies the published URL, check the public Naver page for the expected source link and images (including the uploaded cover, if applicable). If you cannot verify them, report what you could check. Once publication is confirmed, run `log <original-input-url> <published-naver-url>` using the same source URL as for `next`. Preparing a draft alone leaves the publication history untouched.
