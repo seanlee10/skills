@@ -74,7 +74,8 @@ def test_configure_refuses_symlinked_dir(key_file, config, tmp_path):
 
 
 def test_status_unconfigured():
-    assert g.status() == {'status': 'ok', 'configured': False, 'config_dir': g.CONFIG_DISPLAY}
+    assert g.status() == {'status': 'ok', 'configured': False, 'config_dir': g.CONFIG_DISPLAY,
+                          'key_source': 'config_dir', 'missing': 'NOT_CONFIGURED'}
     with pytest.raises(g.Failure) as excinfo:
         g.load_settings()
     assert code_of(excinfo) == 'NOT_CONFIGURED'
@@ -155,6 +156,74 @@ def test_status_reports_key_source_never_private_key(env_key, config, private_ke
     monkeypatch.delenv('GOOGLE_APPLICATION_CREDENTIALS')
     g.configure(str(env_key), '5')
     assert g.status()['key_source'] == 'config_dir'
+
+
+def test_status_unconfigured_with_env_key_says_property_missing(env_key, config, private_key):
+    result = g.status()
+    assert result == {'status': 'ok', 'configured': False, 'config_dir': g.CONFIG_DISPLAY,
+                      'key_source': 'env', 'missing': 'property_id'}
+    assert private_key[1] not in json.dumps(result)
+
+
+def test_status_unconfigured_with_unusable_env_key_reports_key_error(env_key, monkeypatch):
+    monkeypatch.setenv('GA4_PROPERTY_ID', '123')
+    os.chmod(env_key, 0o644)
+    result = g.status()
+    assert result['configured'] is False and result['key_source'] == 'env'
+    assert result['missing'] == 'KEY_FILE_UNSAFE'
+
+
+def test_configure_refused_when_env_credentials_set(env_key, key_file, config):
+    with pytest.raises(g.Failure) as excinfo:
+        g.configure(str(key_file), '1')
+    assert code_of(excinfo) == 'ENV_CREDENTIALS_SET'
+    assert not config.exists()
+    assert 'ENV_CREDENTIALS_SET' in g.MESSAGES
+
+
+def test_configure_force_with_env_credentials_set(env_key, key_file, config):
+    assert g.configure(str(key_file), '1', force=True)['configured'] is True
+    assert (config / 'service-account.json').exists()
+
+
+def test_cli_configure_refused_then_forced(env_key, script, config):
+    done = subprocess.run([sys.executable, str(script), 'configure', '--key', str(env_key), '--property', '3'],
+                          capture_output=True, text=True, env=os.environ.copy())
+    assert done.returncode == 2
+    assert json.loads(done.stderr.splitlines()[-1])['error'] == 'ENV_CREDENTIALS_SET'
+    forced = subprocess.run([sys.executable, str(script), 'configure', '--key', str(env_key), '--property', '3', '--force'],
+                            capture_output=True, text=True, env=os.environ.copy())
+    assert forced.returncode == 0
+
+
+@pytest.mark.parametrize('breakage', ['missing', 'authorized_user', 'mode_0644'])
+def test_unusable_env_key_falls_back_to_configured_key(key_file, config, tmp_path, monkeypatch, breakage):
+    g.configure(str(key_file), '5')
+    other = tmp_path / 'adc.json'
+    if breakage != 'missing':
+        other.write_text(json.dumps({'type': 'authorized_user'} if breakage == 'authorized_user' else json.loads(key_file.read_text())))
+        other.chmod(0o600 if breakage == 'authorized_user' else 0o644)
+    monkeypatch.setenv('GOOGLE_APPLICATION_CREDENTIALS', str(other))
+    monkeypatch.delenv('GA4_PROPERTY_ID', raising=False)
+    key, prop = g.load_settings()
+    assert prop == '5' and key['client_email'] == 'reporter@demo.iam.gserviceaccount.com'
+    result = g.status()
+    assert result['configured'] is True and result['key_source'] == 'config_dir'
+
+
+def test_unusable_env_key_without_configured_key_keeps_env_error(tmp_path, monkeypatch):
+    monkeypatch.setenv('GOOGLE_APPLICATION_CREDENTIALS', str(tmp_path / 'nope.json'))
+    monkeypatch.setenv('GA4_PROPERTY_ID', '1')
+    with pytest.raises(g.Failure) as excinfo:
+        g.load_settings()
+    assert code_of(excinfo) == 'NOT_CONFIGURED'
+    bad = tmp_path / 'bad.json'
+    bad.write_text(json.dumps({'type': 'authorized_user'}))
+    bad.chmod(0o600)
+    monkeypatch.setenv('GOOGLE_APPLICATION_CREDENTIALS', str(bad))
+    with pytest.raises(g.Failure) as excinfo:
+        g.load_settings()
+    assert code_of(excinfo) == 'CONFIG_INVALID'
 
 
 def test_status_property_override(env_key):

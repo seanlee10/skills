@@ -6,7 +6,7 @@
 # ///
 """Report a GA4 property's blog traffic (pages, sources, AI engines) with the GA4 Data API.
 
-Usage: uv run ga4_report.py configure --key FILE --property ID
+Usage: uv run ga4_report.py configure --key FILE --property ID [--force]
        uv run ga4_report.py status [--property ID]   (no network; never prints the key)
        uv run ga4_report.py report [--property ID] [--start D] [--end D] [--prefix /blog/] [--out FILE] [--force]
 
@@ -74,6 +74,7 @@ MESSAGES = {
     'MEASUREMENT_ID_GIVEN': 'That is a measurement ID (G-...), not the numeric property ID shown in Admin -> Property details; nothing was saved.',
     'CONFIG_DIR_UNSAFE': 'The config folder is a symbolic link or not a folder; use a regular folder. Nothing was saved.',
     'LOCAL_SETUP_FAILED': 'The key or settings could not be written to the config folder.',
+    'ENV_CREDENTIALS_SET': 'GOOGLE_APPLICATION_CREDENTIALS is set, so the key is read in place and must not be copied; nothing was saved. Pass --force only if the user asked to store a copy.',
     # stored settings
     'NOT_CONFIGURED': 'No service account key and property ID are configured; run configure first, or set GOOGLE_APPLICATION_CREDENTIALS and a property ID (see references/setup.md).',
     'KEY_FILE_UNSAFE': 'The key file (GOOGLE_APPLICATION_CREDENTIALS or the stored key) must be a regular file owned by the user with mode 600.',
@@ -99,9 +100,11 @@ GENERIC_MESSAGE = 'Unexpected internal error.'
 class Failure(Exception):
     """A failure with a fixed error code; the code is the only payload."""
 
-    def __init__(self, code):
+    def __init__(self, code, stage=None, source=None):
         super().__init__(code)
         self.code = code
+        self.stage = stage    # 'key' or 'property': where settings loading stopped
+        self.source = source  # 'env' or 'config_dir': which key was being loaded
 
 
 def message_for(code):
@@ -160,7 +163,9 @@ def _write_private(path, text):
         raise
 
 
-def configure(key_file, property_id):
+def configure(key_file, property_id, force=False):
+    if _env_key_path() and not force:
+        raise Failure('ENV_CREDENTIALS_SET')
     prop = _parse_property(property_id)
     source = Path(key_file).expanduser()
     if not source.is_file():
@@ -216,43 +221,71 @@ def key_source():
     return 'env' if _env_key_path() else 'config_dir'
 
 
+def _load_key(env_path):
+    """Return (parsed key, source). A key that cannot be used raises Failure with its code."""
+    def parse(raw):
+        try:
+            return _parse_key(raw)
+        except Failure:
+            raise Failure('CONFIG_INVALID') from None
+
+    if env_path:
+        try:
+            return parse(_read_private_json(env_path)), 'env'
+        except Failure as env_error:
+            # An unrelated GOOGLE_APPLICATION_CREDENTIALS (gcloud ADC, a stale path) must not break
+            # a setup made with `configure`: fall back to the stored key if it is usable.
+            try:
+                if config_dir().is_symlink():
+                    raise Failure('CONFIG_DIR_UNSAFE')
+                return parse(_read_private_json(_key_path())), 'config_dir'
+            except Failure:
+                raise Failure(env_error.code, 'key', 'env') from None
+    try:
+        if config_dir().is_symlink():
+            raise Failure('CONFIG_DIR_UNSAFE')
+        return parse(_read_private_json(_key_path())), 'config_dir'
+    except Failure as error:
+        raise Failure(error.code, 'key', 'config_dir') from None
+
+
+def _load(property_override=None):
+    key, source = _load_key(_env_key_path())
+    try:
+        explicit = property_override or os.environ.get('GA4_PROPERTY_ID')
+        if explicit:
+            return key, _parse_property(explicit), source
+        if config_dir().is_symlink():
+            raise Failure('CONFIG_DIR_UNSAFE')
+        settings = _read_private_json(_settings_path())
+        try:
+            return key, _parse_property(settings.get('property_id')), source
+        except (Failure, AttributeError):
+            raise Failure('CONFIG_INVALID') from None
+    except Failure as error:
+        raise Failure(error.code, 'property', source) from None
+
+
 def load_settings(property_override=None):
     """Return (service account dict, property ID).
 
-    The key comes from GOOGLE_APPLICATION_CREDENTIALS if set (read in place, never copied),
-    else from the config folder. The property ID comes from property_override, then
+    The key comes from GOOGLE_APPLICATION_CREDENTIALS if set and usable (read in place, never
+    copied), else from the config folder. The property ID comes from property_override, then
     GA4_PROPERTY_ID, then settings.json in the config folder.
     """
-    env_path = _env_key_path()
-    if env_path:
-        raw_key = _read_private_json(env_path)
-    else:
-        if config_dir().is_symlink():
-            raise Failure('CONFIG_DIR_UNSAFE')
-        raw_key = _read_private_json(_key_path())
-    try:
-        key = _parse_key(raw_key)
-    except Failure:
-        raise Failure('CONFIG_INVALID') from None
-    explicit = property_override or os.environ.get('GA4_PROPERTY_ID')
-    if explicit:
-        return key, _parse_property(explicit)
-    if config_dir().is_symlink():
-        raise Failure('CONFIG_DIR_UNSAFE')
-    settings = _read_private_json(_settings_path())
-    try:
-        return key, _parse_property(settings.get('property_id'))
-    except (Failure, AttributeError):
-        raise Failure('CONFIG_INVALID') from None
+    key, prop, _ = _load(property_override)
+    return key, prop
 
 
 def status(property_override=None):
     try:
-        key, prop = load_settings(property_override)
-    except Failure:
-        return {'status': 'ok', 'configured': False, 'config_dir': CONFIG_DISPLAY}
+        key, prop, source = _load(property_override)
+    except Failure as error:
+        missing = 'property_id' if error.stage == 'property' and error.code == 'NOT_CONFIGURED' else error.code
+        return {'status': 'ok', 'configured': False, 'key_source': error.source or key_source(),
+                'missing': missing, 'config_dir': CONFIG_DISPLAY}
     return {'status': 'ok', 'configured': True, 'property_id': prop,
-            'client_email': key['client_email'], 'key_source': key_source(),
+            'client_email': key['client_email'], 'key_source': source,
             'config_dir': CONFIG_DISPLAY, 'remote_validation': 'not_performed'}
 
 
@@ -507,6 +540,8 @@ def _parser():
     setup = commands.add_parser('configure', help='store a service account key and property ID')
     setup.add_argument('--key', required=True, help='service account JSON key file')
     setup.add_argument('--property', required=True, help='numeric GA4 property ID')
+    setup.add_argument('--force', action='store_true',
+                       help='store a copy even though GOOGLE_APPLICATION_CREDENTIALS is set')
     check = commands.add_parser('status', help='show the settings in use (no network)')
     check.add_argument('--property', help='numeric GA4 property ID (overrides GA4_PROPERTY_ID)')
     run = commands.add_parser('report', help='fetch the report, write a CSV, print a JSON summary')
@@ -523,7 +558,7 @@ def main(argv=None):
     try:
         args = _parser().parse_args(argv)
         if args.command == 'configure':
-            result = configure(args.key, args.property)
+            result = configure(args.key, args.property, args.force)
         elif args.command == 'status':
             result = status(args.property)
         else:

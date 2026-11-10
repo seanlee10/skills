@@ -29,13 +29,18 @@ In that case:
 - The property ID is not stored. Take it from the bot's instructions or the user's message and
   pass it as `--property ID` (or set `GA4_PROPERTY_ID`). If you have none, ask for it.
 - Run `status --property ID` to check; it shows `"key_source": "env"`.
+- If `status` says `"configured": false` while the variable is set, read its `missing` field
+  and report what is missing (`property_id` means ask the user for the property ID; a code such
+  as `KEY_FILE_UNSAFE` or `CONFIG_INVALID` means the platform's key file is unusable, see
+  [references/errors.md](references/errors.md)). Never run `configure` to work around it:
+  `configure` refuses with `ENV_CREDENTIALS_SET` while the variable is set.
 - Never print, open, quote or copy the key file's contents.
 
 Without that variable, follow the steps below.
 
 ## Before the first report
 
-Run `status`. If it says `"configured": false`, stop and walk the user through
+(Only when `GOOGLE_APPLICATION_CREDENTIALS` is not set; see the section above.) Run `status`. If it says `"configured": false`, stop and walk the user through
 [references/setup.md](references/setup.md). They do these steps once, by hand, in the Google
 Cloud console and GA4 Admin; no command can do them:
 
