@@ -1,8 +1,8 @@
 # /// script
 # requires-python = "==3.11.*"
-# dependencies = []
+# dependencies = ["playwright==1.65.0"]
 # ///
-"""Search Pexels videos and photos and download one file by ID (stdlib only). Print JSON to stdout.
+"""Search Pexels videos and photos and download one file by ID using the public website. Print JSON to stdout.
 
 Usage: uv run pexels.py search --query TEXT [--type video|photo] [--orientation portrait|landscape|square|any]
                                [--min-duration S] [--max-duration S] [--min-width PX] [--min-height PX]
@@ -18,41 +18,106 @@ from pathlib import Path
 import sys
 import tempfile
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
-API = 'https://api.pexels.com'
+SITE = 'https://www.pexels.com'
+CACHE = Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'pexels-search'
 USER_AGENT = 'seanlee10-skills-pexels-search/0.1'
 LICENSE = 'Pexels License: free to use, attribution appreciated; see https://www.pexels.com/license/'
 DEFAULT_OUTPUT = Path('~/Downloads/pexels').expanduser()
 TIMEOUT = 60
-MAX_RETRY_WAIT = 60
+CACHE_SECONDS = 86400
 
 
-def fetch_json(url, key):
-    request = urllib.request.Request(url, headers={'Authorization': key, 'User-Agent': USER_AGENT})
-    for attempt in range(2):
+def page_props(url):
+    """Read media metadata published with the public page in an isolated Chrome window."""
+    from playwright.sync_api import Error, sync_playwright
+
+    try:
+        with sync_playwright() as playwright, playwright.chromium.launch(channel='chrome', headless=False) as browser:
+            page = browser.new_page()
+            response = page.goto(url, wait_until='domcontentloaded', timeout=TIMEOUT * 1000)
+            if response and response.status == 429:
+                after = response.headers.get('retry-after', '5')
+                if after.isdigit() and int(after) <= TIMEOUT:
+                    time.sleep(int(after))
+                    response = page.reload(wait_until='domcontentloaded', timeout=TIMEOUT * 1000)
+            if response is None or not response.ok:
+                status = response.status if response else 'no response'
+                raise ValueError(f'Pexels returned {status}. Open the public page in your browser: {url}')
+            data = page.locator('script#__NEXT_DATA__')
+            if not data.count():
+                raise ValueError(f'Pexels page metadata is unavailable: {url}')
+            return data.evaluate("""node => {
+                const {initialData, medium} = JSON.parse(node.textContent).props.pageProps;
+                return {initialData, medium};
+            }""")
+    except Error as exc:
+        raise ValueError(f'Could not open the Pexels page in desktop Google Chrome: {url} ({exc})') from None
+
+
+def website_item(attrs, kind):
+    person = attrs['user']
+    name = ' '.join(filter(None, [person.get('first_name'), person.get('last_name')])) or person['slug']
+    item_id = int(attrs['id'])
+    slug = attrs.get('slug')
+    item = {'id': item_id, 'width': attrs['width'], 'height': attrs['height'],
+            'url': f"{SITE}/{kind}/{slug + '-' if slug else ''}{item_id}/"}
+    profile = f"{SITE}/@{person['slug']}/"
+    if kind == 'video':
+        video = attrs['video']
+        item.update(duration=attrs['duration'], image=video['thumbnail'].get('medium'),
+                    user={'name': name, 'url': profile}, video_files=video['video_files'])
+    else:
+        image = attrs['image']
+        rgb = attrs.get('main_color')
+        color = '#%02x%02x%02x' % tuple(rgb) if isinstance(rgb, list) and len(rgb) == 3 else rgb
+        item.update(photographer=name, photographer_url=profile, alt=attrs.get('alt') or attrs.get('description'),
+                    avg_color=color, src={'medium': image.get('medium'), 'original': image['download_link']})
+    return item
+
+
+def write_json(path, value):
+    handle, temp = tempfile.mkstemp(dir=path.parent)
+    try:
+        with os.fdopen(handle, 'w', encoding='utf-8') as out:
+            json.dump(value, out, ensure_ascii=False, indent=2)
+            out.write('\n')
+        os.replace(temp, path)
+    finally:
+        Path(temp).unlink(missing_ok=True)
+
+
+def item_by_id(item_id, kind):
+    cache = CACHE / f'{kind}-{item_id}.json'
+    if cache.exists() and time.time() - cache.stat().st_mtime < CACHE_SECONDS:
         try:
-            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-                return json.load(response)
-        except urllib.error.HTTPError as error:
-            if error.code == 429 and attempt == 0:
-                wait = error.headers.get('Retry-After', '5')
-                time.sleep(min(int(wait) if wait.isdigit() else 5, MAX_RETRY_WAIT))
-                continue
-            if error.code == 401:
-                raise ValueError('Pexels rejected the API key (HTTP 401). Check PEXELS_API_KEY.') from None
-            if error.code == 404:
-                raise ValueError('Pexels has no item with that ID (HTTP 404).') from None
-            if error.code == 429:
-                raise ValueError('Pexels rate limit reached (HTTP 429). Try again later.') from None
-            raise ValueError(f'Pexels API error: HTTP {error.code}') from None
+            item = json.loads(cache.read_text(encoding='utf-8'))
+            if item['id'] == item_id:
+                return item
+        except (KeyError, ValueError, TypeError):
+            pass
+    url = f'{SITE}/{kind}/{item_id}/'
+    props = page_props(url)
+    medium = props.get('medium') or {}
+    if medium.get('type') == kind and str(medium.get('id')) == str(item_id):
+        return website_item(medium['attributes'], kind)
+    raise ValueError(f'No matching {kind} metadata on {url}. Open the item in the browser to download it.')
+
+
+class MediaRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_media_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 def fetch_file(url, target):
     request = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response, open(target, 'wb') as out:
+    opener = urllib.request.build_opener(MediaRedirect())
+    with opener.open(request, timeout=TIMEOUT) as response, open(target, 'wb') as out:
+        if response.headers.get_content_type() == 'text/html':
+            raise ValueError('Pexels returned a web page instead of the selected media')
         while chunk := response.read(1 << 20):
             out.write(chunk)
 
@@ -60,7 +125,7 @@ def fetch_file(url, target):
 def check_media_url(url):
     parsed = urllib.parse.urlparse(url or '')
     host = parsed.hostname or ''
-    if parsed.scheme != 'https' or parsed.username or not (host == 'pexels.com' or host.endswith('.pexels.com')):
+    if parsed.scheme != 'https' or parsed.username is not None or not (host == 'pexels.com' or host.endswith('.pexels.com')):
         raise ValueError(f'Refusing to download from a non-Pexels URL: {url}')
 
 
@@ -82,7 +147,7 @@ def summarize(item, kind):
             'author_url': item['photographer_url'], 'alt': item.get('alt'), 'avg_color': item.get('avg_color')}
 
 
-def search(query, key, kind='video', orientation='portrait', min_duration=None, max_duration=None,
+def search(query, kind='video', orientation='portrait', min_duration=None, max_duration=None,
            min_width=None, min_height=None, per_page=15, page=1):
     if not query.strip():
         raise ValueError('Provide a non-empty --query')
@@ -92,23 +157,58 @@ def search(query, key, kind='video', orientation='portrait', min_duration=None, 
         raise ValueError('--page must be 1 or more')
     if kind == 'photo' and (min_duration or max_duration):
         raise ValueError('Duration filters apply to videos only')
-    params = {'query': query.strip(), 'per_page': per_page, 'page': page}
-    if orientation != 'any':
-        params['orientation'] = orientation
-    path = '/videos/search' if kind == 'video' else '/v1/search'
-    data = fetch_json(f'{API}{path}?{urllib.parse.urlencode(params)}', key)
-    items = data.get('videos' if kind == 'video' else 'photos', [])
+    section = 'search/videos' if kind == 'video' else 'search'
+    term = urllib.parse.quote(query.strip(), safe='')
+    url = f'{SITE}/{section}/{term}/'
+    params = {'orientation': orientation} if orientation != 'any' else {}
+
+    def get_page(number):
+        options = dict(params)
+        if number > 1:
+            options['page'] = number
+        page_url = url + ('?' + urllib.parse.urlencode(options) if options else '')
+        data = page_props(page_url).get('initialData')
+        if not isinstance(data, dict) or not isinstance(data.get('data'), list):
+            raise ValueError(f'No search results metadata on {page_url}')
+        return data
+
+    data = get_page(1)
+    pagination = data['pagination']
+    total = pagination['total_results']
+    start = (page - 1) * per_page
+    end = min(start + per_page, total)
+    site_size = len(data['data'])
+    items = []
+    if site_size and start < end:
+        first = start // site_size
+        last = min((end - 1) // site_size, pagination['total_pages'] - 1)
+        for index in range(first, last + 1):
+            if index:
+                data = get_page(index + 1)
+                if data['pagination']['current_page'] != index + 1:
+                    raise ValueError('Pexels returned a different results page than requested')
+            base = index * site_size
+            rows = data['data'][max(0, start - base):end - base]
+            items.extend(website_item(row['attributes'], kind) for row in rows if row['type'] == kind)
 
     def keep(item):
-        return ((not min_width or item['width'] >= min_width)
+        width, height = item['width'], item['height']
+        shape = 'square' if width == height else ('portrait' if width < height else 'landscape')
+        return (orientation in ('any', shape)
+                and (not min_width or item['width'] >= min_width)
                 and (not min_height or item['height'] >= min_height)
                 and (not min_duration or item['duration'] >= min_duration)
                 and (not max_duration or item['duration'] <= max_duration))
 
-    results = [summarize(item, kind) for item in items if keep(item)]
-    return {'query': params['query'], 'type': kind, 'orientation': orientation, 'page': page,
-            'per_page': per_page, 'total_results': data.get('total_results'),
-            'has_next_page': bool(data.get('next_page')), 'returned': len(results),
+    matches = [item for item in items if keep(item)]
+    if matches:
+        CACHE.mkdir(parents=True, exist_ok=True)
+    for item in matches:
+        write_json(CACHE / f"{kind}-{item['id']}.json", item)
+    results = [summarize(item, kind) for item in matches]
+    return {'query': query.strip(), 'type': kind, 'orientation': orientation, 'page': page,
+            'per_page': per_page, 'total_results': total,
+            'has_next_page': start + per_page < total, 'returned': len(results),
             'filtered_out': len(items) - len(results), 'results': results}
 
 
@@ -128,9 +228,8 @@ def file_hash(path):
     return digest.hexdigest()
 
 
-def download(item_id, key, kind='video', min_width=720, min_height=1280, output_dir=DEFAULT_OUTPUT, force=False):
-    path = f'/videos/videos/{int(item_id)}' if kind == 'video' else f'/v1/photos/{int(item_id)}'
-    item = fetch_json(API + path, key)
+def download(item_id, kind='video', min_width=720, min_height=1280, output_dir=DEFAULT_OUTPUT, force=False):
+    item = item_by_id(int(item_id), kind)
     if kind == 'video':
         chosen, meets = choose_video_file(item, min_width, min_height)
         link, width, height, suffix = chosen['link'], chosen['width'], chosen['height'], '.mp4'
@@ -171,7 +270,7 @@ def download(item_id, key, kind='video', min_width=720, min_height=1280, output_
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-    sidecar.write_text(json.dumps(record, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    write_json(sidecar, record)
     return {'path': str(target), **record, 'size_bytes': target.stat().st_size, 'cached': False}
 
 
@@ -200,16 +299,15 @@ def parse_args(argv):
 
 def main(argv=None):
     args = parse_args(argv)
-    key = os.environ.get('PEXELS_API_KEY', '').strip()
-    if not key:
-        print('error: set PEXELS_API_KEY (free key from https://www.pexels.com/api/).', file=sys.stderr)
-        return 1
     try:
         if args.command == 'search':
-            result = search(args.query, key, args.type, args.orientation, args.min_duration, args.max_duration,
+            result = search(args.query, args.type, args.orientation, args.min_duration, args.max_duration,
                             args.min_width, args.min_height, args.per_page, args.page)
         else:
-            result = download(args.id, key, args.type, args.min_width, args.min_height, args.output_dir, args.force)
+            result = download(args.id, args.type, args.min_width, args.min_height, args.output_dir, args.force)
+    except KeyError as error:
+        print(f'error: missing field on the public Pexels page: {error}', file=sys.stderr)
+        return 1
     except (ValueError, OSError) as error:
         print(f'error: {error}', file=sys.stderr)
         return 1

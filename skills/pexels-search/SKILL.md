@@ -1,6 +1,6 @@
 ---
 name: pexels-search
-description: Search Pexels for free stock videos and photos by description, filter by orientation, duration and resolution, and download a chosen item with attribution metadata. Use for B-roll, stock footage, or stock images, such as real-footage scenes for a vertical short.
+description: Search the public Pexels website for free stock videos and photos by description, filter by orientation, duration and resolution, and download a chosen item with attribution metadata. Use for B-roll, stock footage, or stock images, such as real-footage scenes for a vertical short.
 ---
 
 # Pexels search
@@ -10,8 +10,7 @@ The calling agent decides which results fit and where each file goes; it does no
 
 ## Run
 
-Run [scripts/pexels.py](scripts/pexels.py) relative to this skill's directory. It needs `PEXELS_API_KEY` in the environment.
-If it is missing, tell the user to create a free key at https://www.pexels.com/api/ and export it. Never request the key in chat.
+Run [scripts/pexels.py](scripts/pexels.py) with `uv` on a desktop with Google Chrome installed. The helper opens a temporary browser window on the public Pexels site. No API key or account setup is required.
 
 ```sh
 uv run <skill folder>/scripts/pexels.py search --query 'rainy city street at night'
@@ -47,9 +46,9 @@ Stdout is one JSON object with `path`, `width`, `height`, `duration` for videos,
 
 ## Failures and licensing
 
-Errors go to stderr with exit status 1. The helper retries once after an HTTP 429 rate limit and then stops.
-Report the actual error; do not loop or switch to scraping pexels.com pages.
-Media downloads are accepted only from `pexels.com` hosts, and the API key is sent only to `api.pexels.com`.
+Search results store the candidate's media links and credits under `~/.cache/pexels-search/` (or `$XDG_CACHE_HOME/pexels-search/`). A download by ID can reuse that metadata for 24 hours. For an unseen ID the helper opens its public detail page. Downloads follow HTTPS links on Pexels hosts.
+
+If Chrome is unavailable or Pexels returns a site check, report the specific CLI error. With an interactive browser available, continue the task on the public Pexels website. Use its Photos or Videos search and orientation filter, open the selected item, and check dimensions and duration in the details. Use the size menu and **Download Selected Size** for video, or **Free download** for the original photo. Capture the browser's saved file path, keep the page URL and creator alongside the file, and report the actual size chosen. If the site requires a human check, use the browser's normal handoff. The helper retries a rate-limited page once if the wait is at most 60 seconds. If HTTP 429 reaches the caller, stop and report the rate limit.
 
 Pexels content is free to use under the Pexels License; attribution is appreciated but not required.
 Keep the sidecar so credits can be added later, and do not present clips as the user's own footage.

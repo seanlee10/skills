@@ -96,7 +96,7 @@ npx skills@latest add seanlee10/skills -a <agent>
 | [domain-search](skills/domain-search/SKILL.md) | Route 53으로 도메인 등록 가능 여부·대안·등록 및 갱신 요금을 조회하고, 필요하면 GoDaddy와 RDAP/WHOIS로 보완 | 로그인된 AWS CLI 프로필 | AWS, 선택적으로 GoDaddy와 등록 정보 서비스 |
 | [naver-post](skills/naver-post/SKILL.md) | 블로그 글에 새 도입부와 유입 추적 링크를 넣어 네이버용 본문을 클립보드에 복사합니다. 붙여 넣기와 발행은 직접 합니다. | macOS와 `uv` | 설정한 원본 사이트와 커버 이미지 호스트 |
 | [naver-research](skills/naver-research/SKILL.md) | 네이버 검색어트렌드·쇼핑 클릭 추이로 블로그 주제를 비교하고 우선순위와 발행일을 제안 | 네이버 MCP 인증과 Google Sheets 접근 | 네이버와 Google |
-| [pexels-search](skills/pexels-search/SKILL.md) | Pexels에서 무료 스톡 영상과 사진을 검색하고 고른 파일을 출처 정보와 함께 저장 | 무료 Pexels API 키 | Pexels |
+| [pexels-search](skills/pexels-search/SKILL.md) | Pexels에서 무료 스톡 영상과 사진을 검색하고 고른 파일을 출처 정보와 함께 저장 | 데스크톱 Google Chrome과 `uv` | Pexels |
 
 ### hwp-parser
 
@@ -371,11 +371,7 @@ Pexels에서 스톡 영상이나 사진을 검색합니다. 세로 쇼츠의 B-r
 - `펙셀스에서 커피 내리는 세로 영상 찾아서 받아줘`
 - `Pexels 사진 1234567을 ~/Pictures/stock에 저장해줘`
 
-**처음 사용하기 전:** https://www.pexels.com/api/ 에서 무료 API 키를 만들고 `PEXELS_API_KEY`로
-export 합니다. 도우미는 Python 표준 라이브러리만 사용합니다.
-
-**내 컴퓨터 밖으로 나가는 것:** 검색어와 항목 ID가 API 키와 함께 Pexels API로 전송되고, 미디어는
-Pexels 서버에서만 받습니다. 업로드하는 것은 없습니다.
+데스크톱 Google Chrome과 `uv`가 필요합니다. 임시 Chrome 창에서 Pexels 공개 페이지를 열어 API 키 없이 검색합니다. 검색어와 항목 ID는 Pexels로 전송되며, 미디어와 출처 정보는 내 컴퓨터에 저장됩니다.
 
 문서: [SKILL.md](skills/pexels-search/SKILL.md) (영어)
 
@@ -398,7 +394,7 @@ Pexels 서버에서만 받습니다. 업로드하는 것은 없습니다.
 - naver-post: 클립보드 단계에 macOS 필요.
 - naver-research: 검색어트렌드·쇼핑인사이트 권한을 가진 네이버 MCP와 Google Sheets 접근.
   외부 MCP 서버 실행에는 Node.js와 npx가 필요합니다.
-- pexels-search: `PEXELS_API_KEY`에 넣은 무료 Pexels API 키.
+- pexels-search: 데스크톱 Google Chrome과 `uv`.
 
 macOS와 Python 3.11에서 테스트했습니다. Windows와 Linux는 아직 검증하지 않았습니다.
 

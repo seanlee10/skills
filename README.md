@@ -97,7 +97,7 @@ skill's SKILL.md "Run" section, with `skills/<skill>` as the skill's folder, e.g
 | [domain-search](skills/domain-search/SKILL.md) | Checks domain availability, alternatives and registration or renewal costs with Route 53, with optional GoDaddy and RDAP/WHOIS lookups. | An authenticated AWS CLI profile | AWS; optional GoDaddy and registration directories |
 | [naver-post](skills/naver-post/SKILL.md) | Prepares a blog article with a new intro and tracked link on the clipboard for you to paste and publish on Naver. | macOS and `uv` | Configured source site and cover image host |
 | [naver-research](skills/naver-research/SKILL.md) | Compares blog ideas with Naver search trends and shopping clicks, then proposes priorities and publication dates. | Naver MCP credentials and Google Sheets access | Naver and Google |
-| [pexels-search](skills/pexels-search/SKILL.md) | Searches Pexels for free stock videos and photos and downloads the chosen file with attribution metadata. | A free Pexels API key | Pexels |
+| [pexels-search](skills/pexels-search/SKILL.md) | Searches Pexels for free stock videos and photos and downloads the chosen file with attribution metadata. | Desktop Google Chrome and `uv` | Pexels |
 
 ### hwp-parser
 
@@ -381,11 +381,7 @@ records the author and license. Matching existing files are reused after a hash 
 - `펙셀스에서 커피 내리는 세로 영상 찾아서 받아줘`
 - `Download Pexels photo 1234567 to ~/Pictures/stock`
 
-**Before first use:** create a free API key at https://www.pexels.com/api/ and export it as
-`PEXELS_API_KEY`. The helper uses only the Python standard library.
-
-**What leaves your machine:** search text and item IDs go to the Pexels API with your key;
-media is downloaded from Pexels hosts only. Nothing is uploaded.
+The helper opens the public Pexels website in a temporary Google Chrome window. It requires desktop Chrome and `uv` and works without an API key. Search terms and item IDs go to Pexels. Media and source details are saved locally.
 
 Docs: [SKILL.md](skills/pexels-search/SKILL.md)
 
@@ -409,7 +405,7 @@ Docs: [SKILL.md](skills/pexels-search/SKILL.md)
 - naver-post: macOS for the clipboard step.
 - naver-research: connected Naver MCP with search-trend and shopping-insight access, plus
   Google Sheets access. Node.js and npx run the external MCP server.
-- pexels-search: a free Pexels API key in `PEXELS_API_KEY`.
+- pexels-search: desktop Google Chrome and `uv`.
 
 Tested on macOS with Python 3.11. Windows and Linux are not yet verified.
 
