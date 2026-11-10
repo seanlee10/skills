@@ -18,9 +18,29 @@ source names and GA4 field names exactly as they appear.
   Copilot, Claude, DeepSeek, Grok and others), in total and per post.
 - Not for Universal Analytics (UA) properties, GA4 configuration changes, or real-time data.
 
+## On a platform that provides the key (jerome and similar)
+
+If the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set, the platform has already
+placed the service account key (a memory-only file, mode 600) and the skill reads it in place.
+In that case:
+
+- Do **not** run `configure` and do not copy the key anywhere: the config folder may be a
+  persistent disk.
+- The property ID is not stored. Take it from the bot's instructions or the user's message and
+  pass it as `--property ID` (or set `GA4_PROPERTY_ID`). If you have none, ask for it.
+- Run `status --property ID` to check; it shows `"key_source": "env"`.
+- If `status` says `"configured": false` while the variable is set, read its `missing` field
+  and report what is missing (`property_id` means ask the user for the property ID; a code such
+  as `KEY_FILE_UNSAFE` or `CONFIG_INVALID` means the platform's key file is unusable, see
+  [references/errors.md](references/errors.md)). Never run `configure` to work around it:
+  `configure` refuses with `ENV_CREDENTIALS_SET` while the variable is set.
+- Never print, open, quote or copy the key file's contents.
+
+Without that variable, follow the steps below.
+
 ## Before the first report
 
-Run `status`. If it says `"configured": false`, stop and walk the user through
+(Only when `GOOGLE_APPLICATION_CREDENTIALS` is not set; see the section above.) Run `status`. If it says `"configured": false`, stop and walk the user through
 [references/setup.md](references/setup.md). They do these steps once, by hand, in the Google
 Cloud console and GA4 Admin; no command can do them:
 
@@ -44,9 +64,9 @@ OAuth app from requesting it.
 ## Run
 
 ```sh
-uv run <this skill's folder>/scripts/ga4_report.py status
+uv run <this skill's folder>/scripts/ga4_report.py status [--property ID]
 uv run <this skill's folder>/scripts/ga4_report.py configure --key FILE --property ID
-uv run <this skill's folder>/scripts/ga4_report.py report [--start 28daysAgo] [--end today] [--prefix /blog/] [--out FILE.csv] [--force]
+uv run <this skill's folder>/scripts/ga4_report.py report [--property ID] [--start 28daysAgo] [--end today] [--prefix /blog/] [--out FILE.csv] [--force]
 ```
 
 In Claude Code the skill folder is `${CLAUDE_SKILL_DIR}`:

@@ -24,6 +24,7 @@ never retries, and no error means zero traffic.
 | `MEASUREMENT_ID_GIVEN` | A measurement ID (`G-…`) was given instead of the property ID. Nothing was saved. | Use the numeric Property ID. |
 | `CONFIG_DIR_UNSAFE` | `~/.config/ga4-blog-report` is a symbolic link or a file. | Replace it with a regular folder, then run `configure`. |
 | `LOCAL_SETUP_FAILED` | The key or settings could not be written. | Check that `~/.config` is writable and run `configure` again. |
+| `ENV_CREDENTIALS_SET` | `configure` was run while `GOOGLE_APPLICATION_CREDENTIALS` is set; the key is read in place and must not be copied to disk. Nothing was saved. | Do not configure. Run `status`, report its `missing` field, and ask for the property ID if that is what is missing. Pass `--force` only if the user explicitly asks for a stored copy. |
 
 ## Stored settings
 
@@ -33,8 +34,10 @@ never retries, and no error means zero traffic.
 | `KEY_FILE_UNSAFE` | A stored file is not a regular file owned by the user with mode 600, or is a symbolic link. | Run `configure` again, which rewrites both files with mode 600. Never `cat` the key. |
 | `CONFIG_INVALID` | The stored key or settings are unreadable, or the private key cannot be loaded. | Run `configure` again with a fresh key. |
 
-`status` never fails on these: it reports `"configured": false` instead. Use a report's
-error code to learn why.
+`status` never fails on these: it reports `"configured": false` instead, with `key_source`
+(`env` or `config_dir`) and `missing` (`property_id`, or the error code above that stopped it).
+If `GOOGLE_APPLICATION_CREDENTIALS` is unusable but a key made by `configure` exists, that
+stored key is used (`key_source` is `config_dir`).
 
 ## Google
 

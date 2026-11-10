@@ -8,6 +8,12 @@ of the GA4 property (to add a user to it).
 The skill reads GA4 as a **service account**: a robot Google account that has its own key
 and only the access you give it. Your own Google sign-in is not used.
 
+> **Platforms that provide the key (jerome and similar).** If `GOOGLE_APPLICATION_CREDENTIALS`
+> is set, skip step 5: the skill reads that file in place and never copies it, so nothing is
+> written to `~/.config`. Steps 1-4 are still needed once. Pass the property ID with
+> `--property ID` on `status` and `report` (or set `GA4_PROPERTY_ID`). The key file must be
+> a regular file owned by the running user with mode 600.
+
 ## 1. Enable the Google Analytics Data API
 
 1. Open the [Google Cloud console](https://console.cloud.google.com/) and pick a project in
