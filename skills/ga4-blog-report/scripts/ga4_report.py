@@ -7,8 +7,11 @@
 """Report a GA4 property's blog traffic (pages, sources, AI engines) with the GA4 Data API.
 
 Usage: uv run ga4_report.py configure --key FILE --property ID
-       uv run ga4_report.py status             (no network; never prints the key)
-       uv run ga4_report.py report [--start D] [--end D] [--prefix /blog/] [--out FILE] [--force]
+       uv run ga4_report.py status [--property ID]   (no network; never prints the key)
+       uv run ga4_report.py report [--property ID] [--start D] [--end D] [--prefix /blog/] [--out FILE] [--force]
+
+Key: GOOGLE_APPLICATION_CREDENTIALS (read in place, never copied) or the configure folder.
+Property: --property, then GA4_PROPERTY_ID, then the configure folder's settings.json.
 
 Exit 0: JSON on stdout. Exit 2: {"status":"failed","error":CODE,"message":str} on stderr.
 """
@@ -72,8 +75,8 @@ MESSAGES = {
     'CONFIG_DIR_UNSAFE': 'The config folder is a symbolic link or not a folder; use a regular folder. Nothing was saved.',
     'LOCAL_SETUP_FAILED': 'The key or settings could not be written to the config folder.',
     # stored settings
-    'NOT_CONFIGURED': 'No service account key and property ID are configured; run configure first (see references/setup.md).',
-    'KEY_FILE_UNSAFE': 'The stored key must be a regular file owned by the user with mode 600; run configure again.',
+    'NOT_CONFIGURED': 'No service account key and property ID are configured; run configure first, or set GOOGLE_APPLICATION_CREDENTIALS and a property ID (see references/setup.md).',
+    'KEY_FILE_UNSAFE': 'The key file (GOOGLE_APPLICATION_CREDENTIALS or the stored key) must be a regular file owned by the user with mode 600.',
     'CONFIG_INVALID': 'The stored settings or key are unreadable or invalid; run configure again.',
     # transport and Google responses
     'NETWORK_ERROR': 'Google could not be reached or timed out; nothing was retried.',
@@ -204,26 +207,53 @@ def _read_private_json(path):
             raise Failure('CONFIG_INVALID') from None
 
 
-def load_settings():
-    """Return (service account dict, property ID) from the config folder."""
+def _env_key_path():
+    """Path from GOOGLE_APPLICATION_CREDENTIALS, or None when unset or empty."""
+    return os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') or None
+
+
+def key_source():
+    return 'env' if _env_key_path() else 'config_dir'
+
+
+def load_settings(property_override=None):
+    """Return (service account dict, property ID).
+
+    The key comes from GOOGLE_APPLICATION_CREDENTIALS if set (read in place, never copied),
+    else from the config folder. The property ID comes from property_override, then
+    GA4_PROPERTY_ID, then settings.json in the config folder.
+    """
+    env_path = _env_key_path()
+    if env_path:
+        raw_key = _read_private_json(env_path)
+    else:
+        if config_dir().is_symlink():
+            raise Failure('CONFIG_DIR_UNSAFE')
+        raw_key = _read_private_json(_key_path())
+    try:
+        key = _parse_key(raw_key)
+    except Failure:
+        raise Failure('CONFIG_INVALID') from None
+    explicit = property_override or os.environ.get('GA4_PROPERTY_ID')
+    if explicit:
+        return key, _parse_property(explicit)
     if config_dir().is_symlink():
         raise Failure('CONFIG_DIR_UNSAFE')
-    key = _read_private_json(_key_path())
     settings = _read_private_json(_settings_path())
     try:
-        return _parse_key(key), _parse_property(settings.get('property_id'))
+        return key, _parse_property(settings.get('property_id'))
     except (Failure, AttributeError):
         raise Failure('CONFIG_INVALID') from None
 
 
-def status():
+def status(property_override=None):
     try:
-        key, prop = load_settings()
+        key, prop = load_settings(property_override)
     except Failure:
         return {'status': 'ok', 'configured': False, 'config_dir': CONFIG_DISPLAY}
     return {'status': 'ok', 'configured': True, 'property_id': prop,
-            'client_email': key['client_email'], 'config_dir': CONFIG_DISPLAY,
-            'remote_validation': 'not_performed'}
+            'client_email': key['client_email'], 'key_source': key_source(),
+            'config_dir': CONFIG_DISPLAY, 'remote_validation': 'not_performed'}
 
 
 # --- Google calls -----------------------------------------------------------------------------
@@ -389,14 +419,14 @@ def _num(value, kind=int):
         raise Failure('RESPONSE_MALFORMED') from None
 
 
-def report(start, end, prefix, out, force, fetch=None):
+def report(start, end, prefix, out, force, fetch=None, property_override=None):
     includes_today = check_dates(start, end)
     if not prefix.startswith('/') or any(c.isspace() for c in prefix):
         raise Failure('INVALID_PREFIX')
     out = Path(out)
     if out.exists() and not force:
         raise Failure('OUTPUT_EXISTS')
-    key, prop = load_settings()
+    key, prop = load_settings(property_override)
     if fetch is None:
         token = access_token(key)
         fetch = lambda body: run_report(token, prop, body)  # noqa: E731
@@ -477,12 +507,14 @@ def _parser():
     setup = commands.add_parser('configure', help='store a service account key and property ID')
     setup.add_argument('--key', required=True, help='service account JSON key file')
     setup.add_argument('--property', required=True, help='numeric GA4 property ID')
-    commands.add_parser('status', help='show the stored settings (no network)')
+    check = commands.add_parser('status', help='show the settings in use (no network)')
+    check.add_argument('--property', help='numeric GA4 property ID (overrides GA4_PROPERTY_ID)')
     run = commands.add_parser('report', help='fetch the report, write a CSV, print a JSON summary')
     run.add_argument('--start', default='28daysAgo')
     run.add_argument('--end', default='today')
     run.add_argument('--prefix', default='/blog/')
     run.add_argument('--out', default='ga4-blog-report.csv')
+    run.add_argument('--property', help='numeric GA4 property ID (overrides GA4_PROPERTY_ID)')
     run.add_argument('--force', action='store_true', help='overwrite --out')
     return parser
 
@@ -493,9 +525,10 @@ def main(argv=None):
         if args.command == 'configure':
             result = configure(args.key, args.property)
         elif args.command == 'status':
-            result = status()
+            result = status(args.property)
         else:
-            result = report(args.start, args.end, args.prefix, args.out, args.force)
+            result = report(args.start, args.end, args.prefix, args.out, args.force,
+                            property_override=args.property)
     except Failure as failure:
         code = failure.code
     except KeyboardInterrupt:

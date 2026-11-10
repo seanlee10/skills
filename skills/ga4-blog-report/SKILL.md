@@ -18,6 +18,21 @@ source names and GA4 field names exactly as they appear.
   Copilot, Claude, DeepSeek, Grok and others), in total and per post.
 - Not for Universal Analytics (UA) properties, GA4 configuration changes, or real-time data.
 
+## On a platform that provides the key (jerome and similar)
+
+If the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set, the platform has already
+placed the service account key (a memory-only file, mode 600) and the skill reads it in place.
+In that case:
+
+- Do **not** run `configure` and do not copy the key anywhere: the config folder may be a
+  persistent disk.
+- The property ID is not stored. Take it from the bot's instructions or the user's message and
+  pass it as `--property ID` (or set `GA4_PROPERTY_ID`). If you have none, ask for it.
+- Run `status --property ID` to check; it shows `"key_source": "env"`.
+- Never print, open, quote or copy the key file's contents.
+
+Without that variable, follow the steps below.
+
 ## Before the first report
 
 Run `status`. If it says `"configured": false`, stop and walk the user through
@@ -44,9 +59,9 @@ OAuth app from requesting it.
 ## Run
 
 ```sh
-uv run <this skill's folder>/scripts/ga4_report.py status
+uv run <this skill's folder>/scripts/ga4_report.py status [--property ID]
 uv run <this skill's folder>/scripts/ga4_report.py configure --key FILE --property ID
-uv run <this skill's folder>/scripts/ga4_report.py report [--start 28daysAgo] [--end today] [--prefix /blog/] [--out FILE.csv] [--force]
+uv run <this skill's folder>/scripts/ga4_report.py report [--property ID] [--start 28daysAgo] [--end today] [--prefix /blog/] [--out FILE.csv] [--force]
 ```
 
 In Claude Code the skill folder is `${CLAUDE_SKILL_DIR}`:

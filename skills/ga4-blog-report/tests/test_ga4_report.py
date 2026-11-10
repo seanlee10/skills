@@ -89,6 +89,85 @@ def test_loose_permissions_refused(key_file, config):
     assert g.status()['configured'] is False
 
 
+# --- GOOGLE_APPLICATION_CREDENTIALS -----------------------------------------------------------
+
+@pytest.fixture
+def env_key(key_file, monkeypatch):
+    key_file.chmod(0o600)
+    monkeypatch.setenv('GOOGLE_APPLICATION_CREDENTIALS', str(key_file))
+    monkeypatch.delenv('GA4_PROPERTY_ID', raising=False)
+    return key_file
+
+
+def test_env_credentials_read_in_place_never_copied(env_key, config, monkeypatch):
+    monkeypatch.setenv('GA4_PROPERTY_ID', '123')
+    key, prop = g.load_settings()
+    assert prop == '123'
+    assert key['client_email'] == 'reporter@demo.iam.gserviceaccount.com'
+    assert not config.exists()
+
+
+def test_property_override_beats_env_beats_settings(env_key, config, monkeypatch):
+    config.mkdir(mode=0o700)
+    (config / 'settings.json').write_text(json.dumps({'property_id': '1'}))
+    (config / 'settings.json').chmod(0o600)
+    assert g.load_settings()[1] == '1'
+    monkeypatch.setenv('GA4_PROPERTY_ID', '2')
+    assert g.load_settings()[1] == '2'
+    assert g.load_settings('properties/3')[1] == '3'
+    assert not (config / 'service-account.json').exists()
+
+
+def test_env_key_without_any_property_is_not_configured(env_key):
+    with pytest.raises(g.Failure) as excinfo:
+        g.load_settings()
+    assert code_of(excinfo) == 'NOT_CONFIGURED'
+
+
+def test_config_dir_key_with_property_override(key_file, config):
+    g.configure(str(key_file), '1')
+    assert g.load_settings('9')[1] == '9'
+
+
+def test_env_key_mode_0644_refused(env_key, monkeypatch):
+    monkeypatch.setenv('GA4_PROPERTY_ID', '123')
+    os.chmod(env_key, 0o644)
+    with pytest.raises(g.Failure) as excinfo:
+        g.load_settings()
+    assert code_of(excinfo) == 'KEY_FILE_UNSAFE'
+
+
+def test_env_key_not_a_service_account(env_key, monkeypatch):
+    monkeypatch.setenv('GA4_PROPERTY_ID', '123')
+    env_key.write_text(json.dumps({'type': 'authorized_user'}))
+    with pytest.raises(g.Failure) as excinfo:
+        g.load_settings()
+    assert code_of(excinfo) == 'CONFIG_INVALID'
+
+
+def test_status_reports_key_source_never_private_key(env_key, config, private_key, monkeypatch):
+    monkeypatch.setenv('GA4_PROPERTY_ID', '123')
+    result = g.status()
+    assert result['configured'] is True and result['key_source'] == 'env'
+    assert result['property_id'] == '123'
+    assert private_key[1] not in json.dumps(result)
+    assert not config.exists()
+    monkeypatch.delenv('GOOGLE_APPLICATION_CREDENTIALS')
+    g.configure(str(env_key), '5')
+    assert g.status()['key_source'] == 'config_dir'
+
+
+def test_status_property_override(env_key):
+    assert g.status('77')['property_id'] == '77'
+
+
+def test_cli_property_flag(env_key, script):
+    done = subprocess.run([sys.executable, str(script), 'status', '--property', '42'],
+                          capture_output=True, text=True, env=os.environ.copy())
+    assert done.returncode == 0
+    assert json.loads(done.stdout)['property_id'] == '42'
+
+
 # --- dates and sources ------------------------------------------------------------------------
 
 @pytest.mark.parametrize('start,end', [('28daysAgo', 'today'), ('2026-01-01', '2026-01-31'),
